@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BSI – Inventário de Sintomas Psicopatológicos</title>
+<style>
+  /* ===== RESET ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #2c3e50; line-height: 1.6; }
+
+  /* ===== LAYOUT ===== */
+  .container { max-width: 780px; margin: 0 auto; padding: 16px; }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, #1a4a7a 0%, #2980b9 100%);
+    color: white; padding: 24px 20px 20px; text-align: center;
+    border-radius: 0 0 16px 16px; margin-bottom: 24px;
+    box-shadow: 0 4px 16px rgba(26,74,122,0.18);
+  }
+  .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+  .header p  { font-size: 0.88rem; opacity: 0.88; }
+  .header .clinic { font-size: 0.82rem; opacity: 0.8; margin-top: 4px; font-style: italic; }
+
+  /* ===== CARDS ===== */
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .card h2 { font-size: 1.05rem; color: #1a4a7a; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e8f0fb; }
+
+  /* ===== CONSENT ===== */
+  .consent-text {
+    font-size: 0.88rem; color: #445; background: #f8fafd;
+    border-left: 4px solid #2980b9; padding: 14px 16px;
+    border-radius: 0 8px 8px 0; margin-bottom: 16px; line-height: 1.7;
+  }
+  .consent-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.9rem; }
+  .consent-check input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; accent-color: #2980b9; flex-shrink: 0; }
+
+  /* ===== FORM FIELDS ===== */
+  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 520px) { .fields-grid { grid-template-columns: 1fr; } }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group label { font-size: 0.82rem; color: #556; font-weight: 600; }
+  .field-group input, .field-group select {
+    border: 1.5px solid #d0d9e8; border-radius: 8px; padding: 9px 12px;
+    font-size: 0.92rem; color: #2c3e50; outline: none; width: 100%; transition: border-color 0.2s;
+  }
+  .field-group input:focus, .field-group select:focus { border-color: #2980b9; }
+
+  /* ===== INSTRUCTIONS ===== */
+  .instructions { background: #eef4fb; border-radius: 10px; padding: 14px 16px; font-size: 0.88rem; color: #2c3e50; }
+  .scale-legend { display: flex; justify-content: space-between; font-size: 0.78rem; color: #667; margin-top: 10px; gap: 4px; flex-wrap: wrap; }
+  .scale-legend span { text-align: center; flex: 1; min-width: 52px; }
+
+  /* ===== QUESTIONS ===== */
+  .question { padding: 14px 0; border-bottom: 1px solid #f0f2f6; }
+  .question:last-child { border-bottom: none; }
+  .question-text { font-size: 0.92rem; margin-bottom: 10px; line-height: 1.5; }
+  .question-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; background: #1a4a7a; color: white;
+    border-radius: 50%; font-size: 0.76rem; font-weight: 700; margin-right: 8px; flex-shrink: 0;
+  }
+  .rating-group { display: flex; gap: 6px; }
+  .rating-btn {
+    flex: 1; border: 2px solid #d0d9e8; background: #f8fafd; border-radius: 8px;
+    padding: 10px 4px 8px; cursor: pointer; text-align: center;
+    transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rating-btn .num { font-size: 1.1rem; font-weight: 700; color: #1a4a7a; line-height: 1; }
+  .rating-btn .lbl { font-size: 0.62rem; color: #778; text-align: center; line-height: 1.2; }
+  .rating-btn:hover { border-color: #2980b9; background: #e8f0fb; }
+  .rating-btn.selected { border-color: #1a4a7a; background: #1a4a7a; }
+  .rating-btn.selected .num, .rating-btn.selected .lbl { color: white; }
+  .question.unanswered .question-text { color: #c0392b; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+  .question.unanswered .rating-group { animation: shake 0.3s; }
+
+  /* ===== BUTTONS ===== */
+  .btn-primary {
+    display: block; width: 100%; padding: 15px;
+    background: linear-gradient(135deg, #1a4a7a, #2980b9);
+    color: white; border: none; border-radius: 10px; font-size: 1rem;
+    font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.93; }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 7px; padding: 11px 18px;
+    border: 2px solid #1a4a7a; background: white; color: #1a4a7a;
+    border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: #eef4fb; }
+  .btn-danger {
+    display: inline-flex; align-items: center; gap: 7px; padding: 11px 18px;
+    border: 2px solid #e74c3c; background: white; color: #e74c3c;
+    border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-danger:hover { background: #fdf0ef; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ===== PROGRESS ===== */
+  .progress-wrap { position: sticky; top: 0; z-index: 10; background: white; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: none; }
+  .progress-wrap.visible { display: block; }
+  .progress-row { display: flex; align-items: center; gap: 10px; max-width: 780px; margin: 0 auto; }
+  .progress-track { flex: 1; background: #e8f0fb; border-radius: 6px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #2980b9, #1a4a7a); border-radius: 6px; transition: width 0.3s; }
+  .progress-label { font-size: 0.8rem; color: #556; font-weight: 600; white-space: nowrap; }
+
+  /* ===== RESULTS ===== */
+  #resultados { display: none; }
+  .alert-item9 {
+    background: #fdf0ef; border: 2px solid #e74c3c; border-radius: 10px;
+    padding: 14px 16px; color: #c0392b; font-weight: 600; font-size: 0.92rem;
+    margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .alert-item9 .icon { font-size: 1.3rem; flex-shrink: 0; }
+
+  /* ===== INDICES ===== */
+  .indices-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width:420px) { .indices-grid { grid-template-columns: 1fr; } }
+  .index-box { background: #f4f8ff; border: 2px solid #1a4a7a; border-radius: 10px; padding: 14px 12px; text-align: center; }
+  .index-box .label { font-size: 0.78rem; color: #556; font-weight: 600; }
+  .index-box .value { font-size: 1.8rem; font-weight: 800; color: #1a4a7a; line-height: 1.1; }
+  .index-box .sublabel { font-size: 0.72rem; color: #778; margin-top: 2px; }
+  .index-box.highlight { background: #1a4a7a; border-color: #1a4a7a; }
+  .index-box.highlight .label, .index-box.highlight .value, .index-box.highlight .sublabel { color: white; }
+
+  /* ===== BARS ===== */
+  .subscale-item { display: grid; grid-template-columns: 150px 1fr 48px; gap: 10px; align-items: center; margin-bottom: 10px; }
+  @media (max-width:480px) { .subscale-item { grid-template-columns: 110px 1fr 42px; gap: 7px; } }
+  .subscale-name { font-size: 0.82rem; font-weight: 600; }
+  .bar-track { background: #e8f0fb; border-radius: 6px; height: 20px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg,#2980b9,#1a4a7a); transition: width 0.8s ease; min-width: 2px; }
+  .bar-fill.elevated { background: linear-gradient(90deg,#e67e22,#d35400); }
+  .bar-fill.high { background: linear-gradient(90deg,#e74c3c,#c0392b); }
+  .subscale-score { font-size: 0.9rem; font-weight: 700; color: #1a4a7a; text-align: right; }
+
+  /* ===== REPORT TEXT ===== */
+  .report-text { background:#f8fafd; border:1.5px solid #d0d9e8; border-radius:8px; padding:16px; font-size:0.88rem; color:#2c3e50; line-height:1.75; white-space:pre-wrap; font-family:'Segoe UI',Arial,sans-serif; }
+  textarea.report-text { width:100%; resize:vertical; min-height:220px; outline:none; }
+  textarea.report-text:focus { border-color:#2980b9; }
+
+  /* ===== GOOGLE SHEETS SECTION ===== */
+  .sheets-setup {
+    background: #f0f9f0; border: 2px solid #27ae60; border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 0;
+  }
+  .sheets-setup h3 { color: #1e8449; font-size: 0.95rem; margin-bottom: 6px; }
+  .sheets-setup p  { font-size: 0.84rem; color: #2c7a3e; margin-bottom: 12px; }
+  .sheets-url-row  { display: flex; gap: 8px; align-items: stretch; }
+  .sheets-url-row input {
+    flex: 1; border: 1.5px solid #a9dfbf; border-radius: 8px; padding: 9px 12px;
+    font-size: 0.85rem; outline: none; color: #2c3e50;
+  }
+  .sheets-url-row input:focus { border-color: #27ae60; }
+  .btn-sheets {
+    padding: 9px 16px; background: #27ae60; color: white; border: none;
+    border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .btn-sheets:hover { background: #1e8449; }
+  .sheets-status { font-size: 0.82rem; margin-top: 8px; min-height: 20px; }
+  .sheets-status.ok    { color: #1e8449; }
+  .sheets-status.error { color: #e74c3c; }
+  .sheets-status.loading { color: #2980b9; }
+
+  /* Doc link box */
+  .doc-link-box {
+    display: none; margin-top: 12px; background: #1a4a7a; border-radius: 10px;
+    padding: 14px 18px; text-align: center;
+  }
+  .doc-link-box p   { color: rgba(255,255,255,0.85); font-size: 0.84rem; margin-bottom: 8px; }
+  .doc-link-box a   {
+    display: inline-block; background: white; color: #1a4a7a; font-weight: 700;
+    font-size: 0.92rem; padding: 10px 20px; border-radius: 8px; text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .doc-link-box a:hover { opacity: 0.88; }
+
+  /* ===== HIDDEN ===== */
+  .hidden { display: none !important; }
+
+  /* ===== PRINT ===== */
+  @media print {
+    body { background: white; font-size: 12pt; }
+    .container { max-width: 100%; padding: 0; }
+    .header { background: none !important; color: black !important; border-bottom: 2pt solid black; border-radius: 0; box-shadow: none; padding: 10pt 0; }
+    .header h1, .header p, .header .clinic { color: black !important; opacity: 1; }
+    .card { box-shadow: none; border: 1pt solid #ccc; margin-bottom: 12pt; page-break-inside: avoid; }
+    #questionario, #consentimento, #identificacao, .progress-wrap, .btn-row,
+    .sheets-setup, #btn-calcular, .btn-print-report { display: none !important; }
+    #resultados { display: block !important; }
+    .report-text, textarea.report-text { border: none; background: none; padding: 0; font-size: 11pt; line-height: 1.8; min-height: unset; resize: none; }
+    .index-box.highlight { background: #eee !important; }
+    .index-box.highlight * { color: black !important; }
+    .bar-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .alert-item9 { border: 2pt solid #333; background: #eee !important; color: black !important; }
+    .print-info { display: block !important; }
+  }
+  .print-info { display: none; }
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-row">
+    <span class="progress-label" id="progressLabel">0 / 53</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span class="progress-label" id="progressPct">0%</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Inventário de Sintomas Psicopatológicos</h1>
+  <p>BSI — Brief Symptom Inventory (Derogatis, 1993)</p>
+  <p class="clinic">Versão Portuguesa: Canavarro (1999)</p>
+</div>
+
+<div class="container">
+
+<!-- CONFIGURAÇÃO GOOGLE SHEETS (só visível antes de começar) -->
+<div class="card hidden" id="configCard">
+  <h2>⚙️ Configuração (apenas uma vez)</h2>
+  <div class="sheets-setup">
+    <h3>🔗 URL do Google Apps Script</h3>
+    <p>Cola aqui o URL do teu Apps Script para guardar automaticamente os resultados no Google Sheets e gerar o relatório em Google Docs.</p>
+    <div class="sheets-url-row">
+      <input type="url" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/..." oninput="guardarUrl()">
+      <button class="btn-sheets" onclick="testarConexao()">Testar</button>
+    </div>
+    <div class="sheets-status" id="configStatus"></div>
+  </div>
+  <p style="font-size:0.78rem;color:#999;margin-top:10px;">Podes saltar este passo e configurar depois. O questionário funciona sem ligação.</p>
+</div>
+
+<!-- CONSENTIMENTO -->
+<div class="card" id="consentimento">
+  <h2>📋 Informação e Consentimento</h2>
+  <div class="consent-text">
+    Este questionário faz parte de uma avaliação psicológica. As suas respostas são <strong>confidenciais</strong> e serão utilizadas exclusivamente para fins clínicos, no âmbito do seu acompanhamento.<br><br>
+    Não existem respostas certas ou erradas. Responda de forma honesta, de acordo com como se tem sentido <strong>durante a última semana, incluindo hoje</strong>.<br><br>
+    A sua participação é voluntária e pode interrompê-la a qualquer momento.
+  </div>
+  <label class="consent-check">
+    <input type="checkbox" id="checkConsent" onchange="activarFormulario()">
+    <span>Li e compreendo a informação acima e <strong>dou o meu consentimento</strong> para participar nesta avaliação.</span>
+  </label>
+</div>
+
+<!-- IDENTIFICAÇÃO -->
+<div class="card hidden" id="identificacao">
+  <h2>👤 Dados de Identificação</h2>
+  <div class="fields-grid">
+    <div class="field-group">
+      <label>Nome / Identificação</label>
+      <input type="text" id="fNome" placeholder="Nome ou código">
+    </div>
+    <div class="field-group">
+      <label>Nº de Processo</label>
+      <input type="text" id="fProcesso" placeholder="Opcional">
+    </div>
+    <div class="field-group">
+      <label>Data</label>
+      <input type="date" id="fData">
+    </div>
+    <div class="field-group">
+      <label>Idade</label>
+      <input type="number" id="fIdade" placeholder="Anos" min="16" max="99">
+    </div>
+    <div class="field-group">
+      <label>Sexo</label>
+      <select id="fSexo">
+        <option value="">— selecionar —</option>
+        <option value="Feminino">Feminino</option>
+        <option value="Masculino">Masculino</option>
+        <option value="Outro">Outro / Não especificado</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>Psicólogo/a responsável</label>
+      <input type="text" id="fClinico" placeholder="Nome do técnico">
+    </div>
+  </div>
+</div>
+
+<!-- QUESTIONÁRIO -->
+<div class="card hidden" id="questionario">
+  <h2>📝 Questionário</h2>
+  <div class="instructions">
+    A seguir encontra-se uma lista de problemas e queixas. Selecione <strong>0 a 4</strong> para indicar o quanto foi incomodado/a por esse problema <strong>durante a última semana, incluindo hoje</strong>.
+    <div class="scale-legend">
+      <span><strong>0</strong><br>Nunca</span>
+      <span><strong>1</strong><br>Raramente</span>
+      <span><strong>2</strong><br>Às vezes</span>
+      <span><strong>3</strong><br>Frequentemente</span>
+      <span><strong>4</strong><br>Muitíssimas<br>vezes</span>
+    </div>
+  </div>
+  <div id="questionsContainer" style="margin-top:16px;"></div>
+  <div style="margin-top:20px;">
+    <button class="btn-primary" id="btn-calcular" onclick="calcular()">Calcular Resultados ›</button>
+  </div>
+</div>
+
+<!-- RESULTADOS -->
+<div id="resultados">
+
+  <!-- Alerta item 9 -->
+  <div class="alert-item9 hidden" id="alertItem9">
+    <span class="icon">⚠️</span>
+    <div><strong>Atenção Clínica:</strong> O/A cliente assinalou resposta positiva no item 9 (pensamentos de acabar com a vida). Requer avaliação clínica imediata e gestão do risco.</div>
+  </div>
+
+  <!-- Info para impressão -->
+  <div class="print-info" id="printInfo"></div>
+
+  <!-- Índices globais -->
+  <div class="card">
+    <h2>📊 Índices Globais</h2>
+    <div class="indices-grid">
+      <div class="index-box highlight">
+        <div class="label">IGS</div>
+        <div class="value" id="r-IGS">—</div>
+        <div class="sublabel">Índice Geral de Sintomas</div>
+      </div>
+      <div class="index-box">
+        <div class="label">TSP</div>
+        <div class="value" id="r-TSP">—</div>
+        <div class="sublabel">Total Sintomas Positivos</div>
+      </div>
+      <div class="index-box">
+        <div class="label">ISP</div>
+        <div class="value" id="r-ISP">—</div>
+        <div class="sublabel">Índice Sintomas Positivos</div>
+      </div>
+    </div>
+    <p style="font-size:0.78rem;color:#778;">Ponto de corte clínico: IGS ≥ 1,70 (Canavarro, 1999)</p>
+  </div>
+
+  <!-- Dimensões -->
+  <div class="card">
+    <h2>📈 Perfil por Dimensões</h2>
+    <div id="subscalesContainer"></div>
+  </div>
+
+  <!-- Relatório -->
+  <div class="card">
+    <h2>📄 Texto para Relatório</h2>
+    <p style="font-size:0.82rem;color:#778;margin-bottom:10px;">Pode editar antes de imprimir ou copiar.</p>
+    <textarea class="report-text" id="reportText" rows="12"></textarea>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="copiarRelatorio()">📋 Copiar texto</button>
+      <button class="btn-secondary btn-print-report" onclick="window.print()">🖨️ Imprimir / PDF</button>
+      <button class="btn-secondary" onclick="enviarEmail()">✉️ Enviar por e-mail</button>
+    </div>
+  </div>
+
+  <!-- Google Sheets + relatório automático -->
+  <div class="card">
+    <h2>🗂️ Guardar &amp; Relatório Automático</h2>
+    <div class="sheets-setup">
+      <h3>Enviar para Google Sheets + gerar relatório Google Docs</h3>
+      <p>Os resultados ficam guardados numa folha e é criado automaticamente um documento Word formatado com o relatório clínico completo.</p>
+      <div class="sheets-url-row">
+        <input type="url" id="sheetsUrlResult" placeholder="https://script.google.com/macros/s/..." oninput="guardarUrl()">
+        <button class="btn-sheets" onclick="enviarParaSheets()">Enviar ›</button>
+      </div>
+      <div class="sheets-status" id="sheetsStatus"></div>
+      <div class="doc-link-box" id="docLinkBox">
+        <p>✅ Relatório criado com sucesso no Google Docs!</p>
+        <a id="docLinkBtn" href="#" target="_blank">📄 Abrir Relatório</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Novo questionário -->
+  <div style="text-align:center;margin:20px 0 30px;">
+    <button class="btn-danger" onclick="novoQuestionario()">🔄 Novo Questionário</button>
+  </div>
+</div>
+
+<!-- OBRIGADO (visível ao cliente após submissão) -->
+<div id="thankyou" style="display:none;">
+  <div class="card" style="text-align:center;padding:48px 24px;max-width:520px;margin:0 auto;">
+    <div style="font-size:3.5rem;margin-bottom:20px;">✅</div>
+    <h2 style="color:#27ae60;margin-bottom:16px;font-size:1.4rem;">Questionário submetido com sucesso!</h2>
+    <p style="font-size:1.05rem;color:#445;line-height:1.7;margin-bottom:20px;">
+      Obrigado pelo seu preenchimento.<br><br>
+      O <strong>Dr. Raul Pereira</strong> irá analisar as suas respostas e entrar em contacto consigo brevemente.
+    </p>
+    <p style="font-size:0.85rem;color:#778;border-top:1px solid #eee;padding-top:16px;margin-top:8px;">
+      As suas respostas foram registadas de forma segura e confidencial.
+    </p>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* =====================================================
+   DADOS BSI
+   ===================================================== */
+const ITEMS = [
+  {n:1,  txt:"Nervosismo ou tensão interior"},
+  {n:2,  txt:"Desmaios ou tonturas"},
+  {n:3,  txt:"Ter a ideia que outra pessoa pode controlar os seus pensamentos"},
+  {n:4,  txt:"Ter a ideia de que os outros são culpados pela maioria dos seus problemas"},
+  {n:5,  txt:"Dificuldade em se lembrar de coisas passadas ou recentes"},
+  {n:6,  txt:"Aborrecer-se ou irritar-se facilmente"},
+  {n:7,  txt:"Dores sobre o coração ou no peito"},
+  {n:8,  txt:"Medo na rua ou praças públicas"},
+  {n:9,  txt:"Pensamentos de acabar com a vida"},
+  {n:10, txt:"Sentir que não pode confiar na maioria das pessoas"},
+  {n:11, txt:"Perder o apetite"},
+  {n:12, txt:"Ter um medo súbito sem razão para isso"},
+  {n:13, txt:"Explodir ou arremessar coisas"},
+  {n:14, txt:"Sentir-se sozinho mesmo quando está com mais pessoas"},
+  {n:15, txt:"Dificuldade em fazer qualquer trabalho"},
+  {n:16, txt:"Sentir-se sozinho"},
+  {n:17, txt:"Sentir-se triste"},
+  {n:18, txt:"Não ter interesse por nada"},
+  {n:19, txt:"Sentir-se atemorizado"},
+  {n:20, txt:"Sentir-se facilmente ofendido nos seus sentimentos"},
+  {n:21, txt:"Sentir que as outras pessoas não são amigas ou não gostam de si"},
+  {n:22, txt:"Sentir-se inferior aos outros"},
+  {n:23, txt:"Vontade de vomitar ou mal-estar do estômago"},
+  {n:24, txt:"Sentir que os outros o/a costumam observar ou falar de si"},
+  {n:25, txt:"Ter dificuldade em adormecer"},
+  {n:26, txt:"Sentir necessidade de verificar várias vezes o que faz"},
+  {n:27, txt:"Dificuldade em tomar decisões"},
+  {n:28, txt:"Medo de viajar de autocarro, metro ou comboio"},
+  {n:29, txt:"Ter dificuldades em respirar"},
+  {n:30, txt:"Calafrios ou afrontamentos"},
+  {n:31, txt:"Ter de evitar certas coisas, lugares ou atividades por lhe causarem medo"},
+  {n:32, txt:"Sentir que a sua mente fica em branco"},
+  {n:33, txt:"Entorpecimento ou formigueiros em partes do corpo"},
+  {n:34, txt:"Ter a ideia de que deveria ser castigado pelos seus pecados"},
+  {n:35, txt:"Sentir-se sem esperança perante o futuro"},
+  {n:36, txt:"Ter dificuldade em concentrar-se"},
+  {n:37, txt:"Falta de forças em partes do corpo"},
+  {n:38, txt:"Sentir-se em estado de tensão ou aflição"},
+  {n:39, txt:"Pensar na morte ou que vai morrer"},
+  {n:40, txt:"Ter impulsos de bater, ofender ou ferir alguém"},
+  {n:41, txt:"Ter vontade de destruir ou partir coisas"},
+  {n:42, txt:"Sentir-se muito envergonhado perante os outros"},
+  {n:43, txt:"Sentir-se mal em multidões, como lojas, cinemas, etc."},
+  {n:44, txt:"Grande dificuldade em sentir-se próximo de outras pessoas"},
+  {n:45, txt:"Ataques de terror ou pânico"},
+  {n:46, txt:"Entrar facilmente em discussão"},
+  {n:47, txt:"Sentir-se nervoso quando tem que ficar sozinho/a"},
+  {n:48, txt:"Sentir que os outros não reconhecem devidamente os seus méritos"},
+  {n:49, txt:"Sentir-se tão irrequieto/a que não consegue manter-se sentado/a quieto/a"},
+  {n:50, txt:"Sentir que não tem valor"},
+  {n:51, txt:"A impressão de que, se deixasse, as outras pessoas se aproveitariam de si"},
+  {n:52, txt:"Ter sentimentos de culpa"},
+  {n:53, txt:"Ter a ideia de que alguma coisa não está bem na sua cabeça"}
+];
+
+const SUBSCALES = [
+  {key:"SOM", name:"Somatização",               items:[2,7,23,29,30,33,37]},
+  {key:"OBS", name:"Obsessões-Compulsões",      items:[5,15,26,27,32,36]},
+  {key:"SI",  name:"Sensibilidade Interpessoal",items:[20,21,22,42]},
+  {key:"DEP", name:"Depressão",                 items:[9,16,17,18,35,50]},
+  {key:"ANS", name:"Ansiedade",                 items:[1,12,19,38,45,49]},
+  {key:"HOS", name:"Hostilidade",               items:[6,13,40,41,46]},
+  {key:"AF",  name:"Ansiedade Fóbica",          items:[8,28,31,43,47]},
+  {key:"IP",  name:"Ideação Paranóide",         items:[4,10,24,48,51]},
+  {key:"PSI", name:"Psicoticismo",              items:[3,14,34,44,53]},
+  {key:"ADD", name:"Itens Adicionais",          items:[11,25,39,52]}
+];
+
+const LABELS = ["Nunca","Raramente","Às vezes","Frequentemente","Muitíssimas vezes"];
+
+/* =====================================================
+   INIT
+   ===================================================== */
+// URL do Apps Script (pré-configurado — não alterar)
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxP6O1ZaxTw5iGDkxVs_n2qJfdlk5rTBSyIlbm2fUMEVmPT6OkH5Z8L2Mg_Iaptg1RpXg/exec';
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Restaurar URL guardado (ou usar o pré-configurado)
+  const url = localStorage.getItem('bsi_sheetsUrl') || APPS_SCRIPT_URL;
+  document.getElementById('sheetsUrlInput').value = url;
+  document.getElementById('sheetsUrlResult').value = url;
+  // Data de hoje
+  const d = new Date();
+  document.getElementById('fData').value =
+    d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+});
+
+/* =====================================================
+   URL CONFIG
+   ===================================================== */
+function guardarUrl() {
+  const url1 = document.getElementById('sheetsUrlInput').value.trim();
+  const url2 = document.getElementById('sheetsUrlResult').value.trim();
+  const url  = url1 || url2;
+  if (url) {
+    localStorage.setItem('bsi_sheetsUrl', url);
+    document.getElementById('sheetsUrlInput').value = url;
+    document.getElementById('sheetsUrlResult').value = url;
+  }
+}
+
+function testarConexao() {
+  const url    = document.getElementById('sheetsUrlInput').value.trim();
+  const status = document.getElementById('configStatus');
+  if (!url) { status.textContent = '⚠️ Cola o URL primeiro.'; status.className='sheets-status error'; return; }
+  status.textContent = 'A testar ligação...'; status.className='sheets-status loading';
+  fetch(url)
+    .then(r => { status.textContent = '✅ Ligação confirmada! O script está activo.'; status.className='sheets-status ok'; })
+    .catch(() => { status.textContent = '❌ Não foi possível ligar. Verifica o URL.'; status.className='sheets-status error'; });
+}
+
+/* =====================================================
+   CONSENT + RENDER
+   ===================================================== */
+function activarFormulario() {
+  const ok = document.getElementById('checkConsent').checked;
+  document.getElementById('identificacao').classList.toggle('hidden', !ok);
+  document.getElementById('questionario').classList.toggle('hidden', !ok);
+  if (ok) {
+    renderQuestions();
+    document.getElementById('identificacao').scrollIntoView({behavior:'smooth'});
+  }
+}
+
+function renderQuestions() {
+  const c = document.getElementById('questionsContainer');
+  if (c.childElementCount > 0) return; // já renderizado
+  c.innerHTML = '';
+  ITEMS.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'question';
+    div.id = 'q' + item.n;
+    div.innerHTML = `<div class="question-text"><span class="question-num">${item.n}</span>${item.txt}</div>`;
+    const rg = document.createElement('div');
+    rg.className = 'rating-group';
+    for (let v = 0; v <= 4; v++) {
+      const btn = document.createElement('button');
+      btn.className = 'rating-btn';
+      btn.type = 'button';
+      btn.dataset.item = item.n;
+      btn.dataset.val  = v;
+      btn.innerHTML = `<span class="num">${v}</span><span class="lbl">${LABELS[v].replace(' ','<br>')}</span>`;
+      btn.addEventListener('click', function() {
+        document.querySelectorAll(`[data-item="${item.n}"]`).forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('q'+item.n).classList.remove('unanswered');
+        updateProgress();
+      });
+      rg.appendChild(btn);
+    }
+    div.appendChild(rg);
+    c.appendChild(div);
+  });
+}
+
+/* =====================================================
+   PROGRESS
+   ===================================================== */
+function updateProgress() {
+  const ans = document.querySelectorAll('.rating-btn.selected').length;
+  const pct = Math.round(ans/53*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = ans+' / 53';
+  document.getElementById('progressPct').textContent   = pct+'%';
+  document.getElementById('progressWrap').classList.toggle('visible', ans>0);
+}
+
+/* =====================================================
+   CALCULAR
+   ===================================================== */
+function calcular() {
+  // Verificar itens por responder
+  const naoRespondidos = [];
+  ITEMS.forEach(item => {
+    if (!document.querySelector(`.rating-btn.selected[data-item="${item.n}"]`))
+      naoRespondidos.push(item.n);
+  });
+  if (naoRespondidos.length > 0) {
+    naoRespondidos.forEach(n => document.getElementById('q'+n).classList.add('unanswered'));
+    document.getElementById('q'+naoRespondidos[0]).scrollIntoView({behavior:'smooth',block:'center'});
+    alert(`Por favor responda a todos os itens.\nFaltam ${naoRespondidos.length} respostas (assinaladas a vermelho).`);
+    return;
+  }
+
+  // Recolher valores
+  const vals = {};
+  ITEMS.forEach(item => {
+    vals[item.n] = parseInt(document.querySelector(`.rating-btn.selected[data-item="${item.n}"]`).dataset.val);
+  });
+
+  // Calcular índices
+  const soma = Object.values(vals).reduce((a,b)=>a+b,0);
+  const IGS  = soma/53;
+  const TSP  = Object.values(vals).filter(v=>v>0).length;
+  const ISP  = TSP>0 ? soma/TSP : 0;
+
+  // Calcular subescalas
+  const scores = {};
+  SUBSCALES.forEach(s => {
+    scores[s.key] = s.items.map(i=>vals[i]).reduce((a,b)=>a+b,0) / s.items.length;
+  });
+
+  // Mostrar índices
+  document.getElementById('r-IGS').textContent = IGS.toFixed(2).replace('.',',');
+  document.getElementById('r-TSP').textContent = TSP;
+  document.getElementById('r-ISP').textContent = ISP.toFixed(2).replace('.',',');
+
+  // Alerta item 9
+  if (vals[9] > 0) document.getElementById('alertItem9').classList.remove('hidden');
+
+  // Barras de subescalas
+  const sc = document.getElementById('subscalesContainer');
+  sc.innerHTML = '';
+  SUBSCALES.forEach(s => {
+    const v   = scores[s.key];
+    const pct = Math.min(100, v/4*100);
+    const cls = v>=1.7 ? 'high' : (v>=1.0 ? 'elevated' : '');
+    sc.innerHTML += `
+      <div class="subscale-item">
+        <div class="subscale-name">${s.name}</div>
+        <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+        <div class="subscale-score">${v.toFixed(2).replace('.',',')}</div>
+      </div>`;
+  });
+  sc.innerHTML += `<p style="font-size:0.75rem;color:#778;margin-top:8px;">
+    <span style="color:#2980b9">■</span> Normal &nbsp;
+    <span style="color:#e67e22">■</span> Elevado (≥1,0) &nbsp;
+    <span style="color:#e74c3c">■</span> Clínico (≥1,7)</p>`;
+
+  // Info para impressão
+  const nome     = document.getElementById('fNome').value || '—';
+  const processo = document.getElementById('fProcesso').value;
+  const data     = fmtData(document.getElementById('fData').value);
+  const clinico  = document.getElementById('fClinico').value || '—';
+  const sexo     = document.getElementById('fSexo').value;
+  const idade    = document.getElementById('fIdade').value;
+  document.getElementById('printInfo').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;font-size:0.84rem;color:#445;">
+      <div><strong>Nome:</strong> ${nome}</div>
+      ${processo?`<div><strong>Processo:</strong> ${processo}</div>`:''}
+      <div><strong>Data:</strong> ${data}</div>
+      ${idade?`<div><strong>Idade:</strong> ${idade} anos</div>`:''}
+      <div><strong>Psicólogo/a:</strong> ${clinico}</div>
+      ${sexo?`<div><strong>Sexo:</strong> ${sexo}</div>`:''}
+    </div>`;
+
+  // Texto do relatório
+  const pronome   = sexo==='Masculino' ? 'o cliente' : (sexo==='Feminino' ? 'a cliente' : 'o/a cliente');
+  const sorted    = SUBSCALES.filter(s=>s.key!=='ADD').map(s=>({...s,score:scores[s.key]})).sort((a,b)=>b.score-a.score);
+  const top3      = sorted.filter(s=>s.score>0).slice(0,3);
+  const zeros     = sorted.filter(s=>s.score===0).map(s=>s.name);
+  const igsClin   = IGS>=1.7;
+
+  let dimDesc = '';
+  if (!top3.length) {
+    dimDesc = 'As pontuações em todas as dimensões são nulas.';
+  } else {
+    const topStr = top3.map(s => {
+      const suf = s.score>=1.7 ? ' (com significado clínico)' : (s.score>=1.0 ? ' (valor elevado)' : '');
+      return `${s.name} (${s.score.toFixed(2).replace('.',',')}${suf})`;
+    }).join(', ');
+    dimDesc = `A análise por dimensões evidencia pontuação mais elevada em ${topStr}. `;
+    dimDesc += igsClin
+      ? 'Estes valores atingem significado clínico e devem ser integrados na formulação clínica global. '
+      : 'Embora não atinjam necessariamente significado clínico isolado, merecem exploração no contexto terapêutico. ';
+    if (zeros.length) dimDesc += `As dimensões de ${zeros.join(', ')} apresentam valores nulos.`;
+  }
+
+  const item9Nota = vals[9]>0
+    ? `\n\nNota clínica ⚠️: O/A cliente assinalou resposta positiva no item 9 (pensamentos de acabar com a vida; resposta = ${vals[9]}). Requer avaliação e gestão do risco imediata.`
+    : '';
+
+  const statusIGS = igsClin
+    ? `situa-se ACIMA do ponto de corte clínico (≥ 1,70), indicando perturbação psicopatológica global clinicamente significativa`
+    : `situa-se abaixo do ponto de corte clínico (≥ 1,70), não se verificando perturbação psicopatológica global clinicamente significativa`;
+
+  document.getElementById('reportText').value =
+`BSI — Inventário de Sintomas Psicopatológicos
+${data}${nome!=='—'?' | '+nome:''}${processo?' | Processo: '+processo:''}
+─────────────────────────────────────────────
+
+Na aplicação do Inventário de Sintomas Psicopatológicos (BSI; Derogatis, 1993; versão portuguesa de Canavarro, 1999), ${pronome} obteve um Índice Geral de Sintomas (IGS) de ${IGS.toFixed(2).replace('.',',')}, um Total de Sintomas Positivos (TSP) de ${TSP} e um Índice de Sintomas Positivos (ISP) de ${ISP.toFixed(2).replace('.',',')}. O valor de IGS ${statusIGS} no momento da avaliação.
+
+${dimDesc}
+
+Os resultados do BSI constituem dados complementares à avaliação clínica global, não representando, por si só, base suficiente para qualquer diagnóstico. A interpretação clínica dos valores obtidos deve ser integrada no contexto do processo terapêutico e na formulação do caso.${item9Nota}
+
+─────────────────────────────────────────────
+IGS = ${IGS.toFixed(2).replace('.',',')}   |   TSP = ${TSP}   |   ISP = ${ISP.toFixed(2).replace('.',',')}
+Ponto de corte: IGS ≥ 1,70 (Canavarro, 1999)
+Psicólogo/a: ${clinico}`;
+
+  // Guardar resultados para envio (incluindo todos os 53 itens individuais)
+  window._bsiData = {
+    nome, processo, data, clinico, sexo, idade: idade||'',
+    IGS: IGS.toFixed(3), TSP, ISP: ISP.toFixed(3),
+    item9: vals[9],
+    SOM: scores.SOM.toFixed(3), OBS: scores.OBS.toFixed(3),
+    SI:  scores.SI.toFixed(3),  DEP: scores.DEP.toFixed(3),
+    ANS: scores.ANS.toFixed(3), HOS: scores.HOS.toFixed(3),
+    AF:  scores.AF.toFixed(3),  IP:  scores.IP.toFixed(3),
+    PSI: scores.PSI.toFixed(3), ADD: scores.ADD.toFixed(3),
+    items: vals   // valores individuais de todos os 53 itens (para relatório detalhado)
+  };
+
+  // Envio automático em background para Google Sheets + Google Docs (invisível para o cliente)
+  const url = localStorage.getItem('bsi_sheetsUrl') || APPS_SCRIPT_URL;
+  document.getElementById('sheetsUrlResult').value = url;
+  setTimeout(() => enviarParaSheets(true), 600);
+
+  // Esconder formulário e mostrar mensagem de agradecimento ao cliente
+  ['configCard','consentimento','identificacao','questionario','progressWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('thankyou').style.display = 'block';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* =====================================================
+   ENVIO PARA GOOGLE SHEETS
+   ===================================================== */
+function enviarParaSheets(auto) {
+  const url    = (document.getElementById('sheetsUrlResult').value || '').trim();
+  const status = document.getElementById('sheetsStatus');
+  const docBox = document.getElementById('docLinkBox');
+
+  if (!url) {
+    status.textContent = '⚠️ Cola o URL do Apps Script acima.';
+    status.className = 'sheets-status error';
+    return;
+  }
+  if (!window._bsiData) {
+    status.textContent = '⚠️ Calcula primeiro os resultados.';
+    status.className = 'sheets-status error';
+    return;
+  }
+
+  status.textContent = auto ? '⏳ A guardar automaticamente...' : '⏳ A enviar...';
+  status.className = 'sheets-status loading';
+  docBox.style.display = 'none';
+
+  localStorage.setItem('bsi_sheetsUrl', url);
+
+  fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(window._bsiData)
+  })
+  .then(r => r.json())
+  .then(resp => {
+    if (resp.status === 'ok') {
+      status.textContent = '✅ Dados guardados no Google Sheets!';
+      status.className   = 'sheets-status ok';
+      if (resp.docUrl) {
+        document.getElementById('docLinkBtn').href = resp.docUrl;
+        docBox.style.display = 'block';
+      }
+    } else {
+      throw new Error(resp.msg || 'Erro desconhecido');
+    }
+  })
+  .catch(err => {
+    // no-cors fallback — o script pode não devolver resposta legível
+    status.textContent = '✅ Enviado! (Abre o Google Sheets para confirmar)';
+    status.className   = 'sheets-status ok';
+    // tentar novamente em modo no-cors se falhou por CORS
+    fetch(url, {
+      method: 'POST', mode: 'no-cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(window._bsiData)
+    }).catch(()=>{});
+  });
+}
+
+/* =====================================================
+   UTILITÁRIOS
+   ===================================================== */
+function fmtData(d) {
+  if (!d) return '';
+  const [y,m,dd] = d.split('-');
+  return `${dd}/${m}/${y}`;
+}
+
+function copiarRelatorio() {
+  const t = document.getElementById('reportText');
+  t.select(); t.setSelectionRange(0,99999);
+  navigator.clipboard.writeText(t.value)
+    .then(()=>alert('Texto copiado!'))
+    .catch(()=>{ document.execCommand('copy'); alert('Texto copiado!'); });
+}
+
+function enviarEmail() {
+  if (!window._bsiData) return;
+  const d = window._bsiData;
+  const s = encodeURIComponent(`BSI — Resultados: ${d.nome} — ${d.data}`);
+  const b = encodeURIComponent(document.getElementById('reportText').value);
+  window.location.href = `mailto:?subject=${s}&body=${b}`;
+}
+
+function novoQuestionario() {
+  if (!confirm('Iniciar novo questionário? Os dados actuais não ficam guardados aqui.')) return;
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>location.reload(), 400);
+}
+</script>
+</body>
+</html>
