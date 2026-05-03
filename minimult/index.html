@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HICOA — Mini-Mult</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2c5f8a;--blue-dk:#1e4166;--accent:#4a9eca;
+  --bg:#f4f7fb;--card:#fff;--text:#1a1a2e;--muted:#5a6a7a;
+  --border:#d0dce8;--ok:#2e7d52;--warn:#b45309;--shadow:0 2px 12px rgba(44,95,138,.10);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6}
+header{background:var(--blue);color:#fff;padding:22px 20px 18px;text-align:center}
+header .logo{font-size:12px;opacity:.75;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+header h1{font-size:21px;font-weight:600;margin-bottom:3px}
+header p{font-size:13px;opacity:.8}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:22px 22px 26px;margin-bottom:20px}
+.card-title{font-size:15px;font-weight:600;color:var(--blue);border-bottom:2px solid var(--border);padding-bottom:9px;margin-bottom:16px}
+.pgbar{position:sticky;top:0;z-index:10;background:#fff;padding:9px 16px;box-shadow:0 1px 5px rgba(0,0,0,.08);border-radius:0 0 10px 10px;margin-bottom:16px}
+.pgbar-inner{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.pgbar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .35s}
+.pgbar-lbl{font-size:12px;color:var(--muted);margin-top:3px}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:540px){.demo-grid{grid-template-columns:1fr}}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;color:var(--text);background:#fff;outline:none;transition:border .15s}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input[readonly]{background:var(--bg);color:var(--muted)}
+.rinline{display:flex;gap:18px;padding-top:3px}
+.rinline label{display:flex;align-items:center;gap:5px;font-size:14px;cursor:pointer}
+.instr p{font-size:14px;color:var(--muted);margin-bottom:9px}
+.instr .legend{display:flex;gap:20px;background:var(--bg);padding:10px 14px;border-radius:7px;margin-top:8px;font-size:13px}
+.item{display:flex;gap:11px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border-bottom:none}
+.item-num{min-width:30px;height:30px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;margin-top:2px}
+.item-content{flex:1}
+.qtext{font-size:14px;font-style:italic;margin-bottom:8px}
+.opts{display:flex;gap:10px}
+.opt{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;transition:all .14s}
+.opt:hover{background:var(--bg);border-color:var(--border)}
+.opt:has(input:checked){background:#d0e8f5;border-color:var(--blue)}
+.opt input{accent-color:var(--blue)}
+.ol{min-width:22px;height:22px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue)}
+.opt:has(input:checked) .ol{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ot{font-size:13px}
+.err{color:#c0392b;background:#fdecea;border:1px solid #e8a09a;border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:14px;display:none}
+.submit-wrap{text-align:center;padding:18px 0}
+.btn{background:var(--blue);color:#fff;border:none;padding:13px 44px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s,transform .1s}
+.btn:hover{background:var(--blue-dk)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{background:var(--muted);cursor:not-allowed}
+.spin{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .75s linear infinite;vertical-align:middle;margin-right:7px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Results */
+.results{display:none;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:28px 24px;margin-bottom:20px}
+.results.show{display:block}
+.res-title{font-size:18px;font-weight:700;color:var(--ok);margin-bottom:6px}
+.res-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.profile-table{width:100%;border-collapse:collapse;font-size:13px}
+.profile-table th{background:var(--blue);color:#fff;padding:9px 12px;text-align:left;font-weight:600}
+.profile-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.profile-table tr:last-child td{border-bottom:none}
+.profile-table tr:hover td{background:#f0f5fb}
+.t-bar-cell{width:160px}
+.t-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.t-fill{height:100%;border-radius:5px;background:var(--accent)}
+.t-fill.high{background:#e74c3c}
+.t-fill.vhigh{background:#c0392b}
+.validity-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.badge.ok{background:#dcfce7;color:#166534}
+.badge.warn{background:#fef9c3;color:#854d0e}
+.badge.bad{background:#fee2e2;color:#991b1b}
+.res-note{font-size:13px;color:var(--muted);margin-top:18px;padding:11px 14px;background:#fff8e6;border-radius:8px;border-left:3px solid #f0a500}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">HICOA — Psicologia Clínica</div>
+  <h1>Mini-Mult — MMPI Versão Abreviada</h1>
+  <p>Inventário Multifásico de Personalidade de Minnesota · J.C. Kincannon (1968)</p>
+</header>
+<div class="wrap">
+  <div class="pgbar">
+    <div class="pgbar-inner"><div class="pgbar-fill" id="pgFill" style="width:0%"></div></div>
+    <div class="pgbar-lbl" id="pgLbl">0 de 71 questões respondidas</div>
+  </div>
+  <div class="err" id="errMsg"></div>
+  <form id="frm" novalidate>
+    <!-- DEMOGRAPHICS -->
+    <div class="card">
+      <div class="card-title">Dados do Respondente</div>
+      <div class="demo-grid">
+        <div class="field"><label>Nome completo</label><input type="text" id="nome" required placeholder="Nome e apelido"></div>
+        <div class="field"><label>Data de nascimento</label><input type="date" id="data_nasc" required></div>
+        <div class="field"><label>Sexo</label><div class="rinline"><label><input type="radio" name="sexo" value="M" required> Masculino</label><label><input type="radio" name="sexo" value="F"> Feminino</label></div></div>
+        <div class="field"><label>Escolaridade</label>
+          <select id="escolaridade" required>
+            <option value="">Seleccionar...</option>
+            <option value="1_ciclo">1.º Ciclo (até ao 4.º ano)</option>
+            <option value="2_ciclo">2.º Ciclo (até ao 6.º ano)</option>
+            <option value="3_ciclo">3.º Ciclo (até ao 9.º ano)</option>
+            <option value="secundario">Ensino Secundário (12.º ano)</option>
+            <option value="bacharelato">Bacharelato</option>
+            <option value="licenciatura">Licenciatura</option>
+            <option value="mestrado">Mestrado</option>
+            <option value="doutoramento">Doutoramento</option>
+          </select>
+        </div>
+        <div class="field"><label>Profissão</label><input type="text" id="profissao" placeholder="Profissão actual"></div>
+        <div class="field"><label>Data de avaliação</label><input type="date" id="data_av" required></div>
+        <div class="field"><label>Psicólogo</label><input type="text" id="psico" value="Dr. Raul Pereira" readonly></div>
+      </div>
+    </div>
+    <!-- INSTRUCTIONS -->
+    <div class="card instr">
+      <div class="card-title">Instruções</div>
+      <p>Nas páginas seguintes encontram-se várias frases. Pedimos-lhe que responda <strong>Verdadeiro</strong> ou <strong>Falso</strong> a cada uma delas, de acordo com se se aplicam ou não à sua situação.</p>
+      <p>Não deixe nenhuma pergunta sem resposta. Não demore muito tempo entre uma resposta e a seguinte.</p>
+      <div class="legend">
+        <span><strong>V</strong> — Verdadeiro (aplica-se a mim)</span>
+        <span><strong>F</strong> — Falso (não se aplica a mim)</span>
+      </div>
+    </div>
+    <!-- ITEMS -->
+    <div class="card">
+      <div class="card-title">Questões 1 a 71</div>
+      <div class="item" id="q1">
+        <div class="item-num">1</div>
+        <div class="item-content">
+          <p class="qtext">Tenho bom apetite</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q1" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q1" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q2">
+        <div class="item-num">2</div>
+        <div class="item-content">
+          <p class="qtext">Quase sempre acordo bem disposto</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q2" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q2" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q3">
+        <div class="item-num">3</div>
+        <div class="item-content">
+          <p class="qtext">A minha vida de todos os dias está cheia de coisas que me interessam</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q3" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q3" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q4">
+        <div class="item-num">4</div>
+        <div class="item-content">
+          <p class="qtext">Trabalho num estado de grande tensão nervosa</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q4" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q4" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q5">
+        <div class="item-num">5</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes penso em coisas demasiado indecentes para poder falar delas</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q5" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q5" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q6">
+        <div class="item-num">6</div>
+        <div class="item-content">
+          <p class="qtext">Raramente tenho prisão de ventre</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q6" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q6" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q7">
+        <div class="item-num">7</div>
+        <div class="item-content">
+          <p class="qtext">Há alturas em que desejo muito deixar a minha casa</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q7" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q7" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q8">
+        <div class="item-num">8</div>
+        <div class="item-content">
+          <p class="qtext">Algumas vezes tenho crises de riso ou de choro que não consigo impedir</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q8" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q8" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q9">
+        <div class="item-num">9</div>
+        <div class="item-content">
+          <p class="qtext">Sofro de náuseas e vómitos</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q9" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q9" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q10">
+        <div class="item-num">10</div>
+        <div class="item-content">
+          <p class="qtext">Parece que ninguém me compreende</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q10" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q10" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q11">
+        <div class="item-num">11</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes apetece-me praguejar</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q11" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q11" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q12">
+        <div class="item-num">12</div>
+        <div class="item-content">
+          <p class="qtext">Tenho pesadelos quase todas as noites</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q12" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q12" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q13">
+        <div class="item-num">13</div>
+        <div class="item-content">
+          <p class="qtext">Tenho dificuldade em fixar a atenção quando trabalho ou quando estou ocupado</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q13" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q13" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q14">
+        <div class="item-num">14</div>
+        <div class="item-content">
+          <p class="qtext">Tenho passado por coisas muito especiais e esquisitas</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q14" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q14" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q15">
+        <div class="item-num">15</div>
+        <div class="item-content">
+          <p class="qtext">Se os outros tivessem querido, concerteza eu teria mais sorte</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q15" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q15" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q16">
+        <div class="item-num">16</div>
+        <div class="item-content">
+          <p class="qtext">Numa certa altura da minha infância, aconteceu-me roubar pequenas coisas</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q16" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q16" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q17">
+        <div class="item-num">17</div>
+        <div class="item-content">
+          <p class="qtext">Tenho tido períodos (dias, semanas, meses) durante os quais nada pude fazer bem feito, porque não conseguia tomar atenção a nada</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q17" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q17" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q18">
+        <div class="item-num">18</div>
+        <div class="item-content">
+          <p class="qtext">O meu sono é agitado e incómodo</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q18" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q18" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q19">
+        <div class="item-num">19</div>
+        <div class="item-content">
+          <p class="qtext">Quando estou ao pé de outras pessoas, sinto-me contrariado porque ouço coisas esquisitas</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q19" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q19" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q20">
+        <div class="item-num">20</div>
+        <div class="item-content">
+          <p class="qtext">A maior parte das pessoas que me conhecem gostam de mim</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q20" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q20" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q21">
+        <div class="item-num">21</div>
+        <div class="item-content">
+          <p class="qtext">Muitas vezes sou obrigado a receber ordens de pessoas que sabem menos do que eu</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q21" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q21" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q22">
+        <div class="item-num">22</div>
+        <div class="item-content">
+          <p class="qtext">Gostava de ser tão feliz como os outros parecem ser</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q22" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q22" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q23">
+        <div class="item-num">23</div>
+        <div class="item-content">
+          <p class="qtext">Acho que muitas pessoas aumentam as suas desgraças só para receberem a simpatia e a ajuda dos outros</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q23" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q23" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q24">
+        <div class="item-num">24</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes fico furioso</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q24" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q24" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q25">
+        <div class="item-num">25</div>
+        <div class="item-content">
+          <p class="qtext">Acho que tenho pouca confiança em mim</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q25" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q25" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q26">
+        <div class="item-num">26</div>
+        <div class="item-content">
+          <p class="qtext">Nunca reparei que os meus músculos estremeçam ou tremam duma maneira incómoda e estranha</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q26" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q26" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q27">
+        <div class="item-num">27</div>
+        <div class="item-content">
+          <p class="qtext">A maior parte das vezes tenho a impressão de que fiz qualquer coisa mal ou desastrada</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q27" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q27" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q28">
+        <div class="item-num">28</div>
+        <div class="item-content">
+          <p class="qtext">Sinto-me quase sempre feliz</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q28" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q28" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q29">
+        <div class="item-num">29</div>
+        <div class="item-content">
+          <p class="qtext">Há pessoas que são tão autoritárias que tenho vontade de fazer o contrário do que elas dizem, mesmo que eu tenha a certeza de que elas têm razão</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q29" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q29" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q30">
+        <div class="item-num">30</div>
+        <div class="item-content">
+          <p class="qtext">Tenho a impressão de que os outros me tentam prejudicar</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q30" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q30" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q31">
+        <div class="item-num">31</div>
+        <div class="item-content">
+          <p class="qtext">Acho que todas as pessoas são capazes de usar meios pouco honestos para ganhar qualquer coisa ou qualquer vantagem em vez de perderem</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q31" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q31" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q32">
+        <div class="item-num">32</div>
+        <div class="item-content">
+          <p class="qtext">Tenho muitas vezes problemas com o meu estômago ou com os meus intestinos</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q32" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q32" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q33">
+        <div class="item-num">33</div>
+        <div class="item-content">
+          <p class="qtext">Muitas vezes não percebo porque sou brusco e rabujento</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q33" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q33" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q34">
+        <div class="item-num">34</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes os meus pensamentos andam tão depressa que não consigo contá-los</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q34" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q34" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q35">
+        <div class="item-num">35</div>
+        <div class="item-content">
+          <p class="qtext">Estou convencido de que tenho na minha casa uma vida familiar tão agradável como a maior parte das pessoas que conheço</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q35" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q35" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q36">
+        <div class="item-num">36</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes sinto que não sirvo para nada</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q36" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q36" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q37">
+        <div class="item-num">37</div>
+        <div class="item-content">
+          <p class="qtext">Nos últimos anos tenho gozado, geralmente de boa saúde</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q37" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q37" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q38">
+        <div class="item-num">38</div>
+        <div class="item-content">
+          <p class="qtext">Há alturas em que faço coisas sem saber mais tarde o que fiz realmente</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q38" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q38" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q39">
+        <div class="item-num">39</div>
+        <div class="item-content">
+          <p class="qtext">Acho que muitas vezes tenho sido castigado sem razão</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q39" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q39" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q40">
+        <div class="item-num">40</div>
+        <div class="item-content">
+          <p class="qtext">Nunca me senti tão bom como agora</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q40" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q40" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q41">
+        <div class="item-num">41</div>
+        <div class="item-content">
+          <p class="qtext">Não me importo com o que os outros pensam de mim</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q41" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q41" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q42">
+        <div class="item-num">42</div>
+        <div class="item-content">
+          <p class="qtext">Acho que tenho boa memória</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q42" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q42" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q43">
+        <div class="item-num">43</div>
+        <div class="item-content">
+          <p class="qtext">Para mim é difícil começar uma conversa quando encontro pessoas que não conheço</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q43" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q43" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q44">
+        <div class="item-num">44</div>
+        <div class="item-content">
+          <p class="qtext">Muitas vezes sinto um estado de fraqueza geral</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q44" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q44" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q45">
+        <div class="item-num">45</div>
+        <div class="item-content">
+          <p class="qtext">Tenho muito poucas vezes dores de cabeça</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q45" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q45" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q46">
+        <div class="item-num">46</div>
+        <div class="item-content">
+          <p class="qtext">Não acho difícil conservar o equilíbrio quando ando</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q46" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q46" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q47">
+        <div class="item-num">47</div>
+        <div class="item-content">
+          <p class="qtext">Não gosto de toda a gente que conheço</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q47" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q47" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q48">
+        <div class="item-num">48</div>
+        <div class="item-content">
+          <p class="qtext">Há pessoas que tentam aproveitar-se das minhas ideias e dos meus pensamentos</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q48" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q48" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q49">
+        <div class="item-num">49</div>
+        <div class="item-content">
+          <p class="qtext">Gostava de não ser envergonhado</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q49" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q49" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q50">
+        <div class="item-num">50</div>
+        <div class="item-content">
+          <p class="qtext">Estou convencido de que os meus pecados não podem ser perdoados</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q50" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q50" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q51">
+        <div class="item-num">51</div>
+        <div class="item-content">
+          <p class="qtext">Preocupo-me muitas vezes com coisas que não são muito importantes</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q51" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q51" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q52">
+        <div class="item-num">52</div>
+        <div class="item-content">
+          <p class="qtext">Os meus pais muitas vezes criticam as pessoas com quem me dou</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q52" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q52" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q53">
+        <div class="item-num">53</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes acontece-me dizer um pouco mal dos outros</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q53" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q53" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q54">
+        <div class="item-num">54</div>
+        <div class="item-content">
+          <p class="qtext">Há momentos em que tenho a impressão de que o meu espírito trabalha melhor do que é costume</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q54" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q54" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q55">
+        <div class="item-num">55</div>
+        <div class="item-content">
+          <p class="qtext">Quase nunca senti palpitações e raramente me falta o fôlego</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q55" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q55" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q56">
+        <div class="item-num">56</div>
+        <div class="item-content">
+          <p class="qtext">Fico furioso com facilidade, mas esqueço-me depressa</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q56" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q56" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q57">
+        <div class="item-num">57</div>
+        <div class="item-content">
+          <p class="qtext">Tenho alturas em que estou tão nervoso que sou incapaz de estar sentado numa cadeira</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q57" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q57" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q58">
+        <div class="item-num">58</div>
+        <div class="item-content">
+          <p class="qtext">Os meus pais e os meus amigos acham que eu tenho mais defeitos do que realmente tenho</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q58" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q58" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q59">
+        <div class="item-num">59</div>
+        <div class="item-content">
+          <p class="qtext">Ninguém se preocupa com o que pode acontecer aos outros</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q59" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q59" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q60">
+        <div class="item-num">60</div>
+        <div class="item-content">
+          <p class="qtext">Não censuro uma pessoa que se aproveita de outra, se essa outra deixar</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q60" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q60" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q61">
+        <div class="item-num">61</div>
+        <div class="item-content">
+          <p class="qtext">Há alturas em que me sinto cheio de energia</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q61" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q61" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q62">
+        <div class="item-num">62</div>
+        <div class="item-content">
+          <p class="qtext">A minha vista não tem enfraquecido</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q62" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q62" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q63">
+        <div class="item-num">63</div>
+        <div class="item-content">
+          <p class="qtext">Raramente sinto barulhos ou zumbidos nos ouvidos</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q63" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q63" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q64">
+        <div class="item-num">64</div>
+        <div class="item-content">
+          <p class="qtext">Numa ou em várias alturas da minha vida, senti que alguém tentava hipnotizar-me</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q64" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q64" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q65">
+        <div class="item-num">65</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes sinto-me cheio de alegria sem nenhuma razão especial</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q65" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q65" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q66">
+        <div class="item-num">66</div>
+        <div class="item-content">
+          <p class="qtext">Mesmo quando estou ao pé de outras pessoas, sinto-me só a maior parte do tempo</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q66" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q66" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q67">
+        <div class="item-num">67</div>
+        <div class="item-content">
+          <p class="qtext">Julgo que quase toda a gente é capaz de mentir para se livrar de uma situação desagradável</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q67" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q67" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q68">
+        <div class="item-num">68</div>
+        <div class="item-content">
+          <p class="qtext">Sou mais sensível que a maioria das pessoas</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q68" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q68" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q69">
+        <div class="item-num">69</div>
+        <div class="item-content">
+          <p class="qtext">Às vezes o meu espírito parece que trabalha mais devagar do que é costume</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q69" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q69" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q70">
+        <div class="item-num">70</div>
+        <div class="item-content">
+          <p class="qtext">As pessoas desiludem-me muitas vezes</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q70" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q70" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="q71">
+        <div class="item-num">71</div>
+        <div class="item-content">
+          <p class="qtext">Tenho abusado das bebidas alcoólicas</p>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="q71" value="V" required><span class="ol">V</span><span class="ot">Verdadeiro</span></label>
+            <label class="opt"><input type="radio" name="q71" value="F"><span class="ol">F</span><span class="ot">Falso</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="submit-wrap">
+      <button type="submit" class="btn" id="btnSub">Submeter e calcular resultados</button>
+    </div>
+  </form>
+  <!-- RESULTS -->
+  <div class="results" id="resCard">
+    <div class="res-title">✓ Resultados calculados</div>
+    <div class="res-sub" id="resSub"></div>
+    <div class="validity-badges" id="validityBadges"></div>
+    <table class="profile-table">
+      <thead><tr><th>Escala</th><th>Nome</th><th>Bruto Mini-Mult</th><th>Bruto MMPI</th><th>T corrigido</th><th>Nota T</th><th class="t-bar-cell">Perfil</th></tr></thead>
+      <tbody id="resBody"></tbody>
+    </table>
+    <div class="res-note" id="resNote"></div>
+  </div>
+</div>
+<script>
+const SCORING_KEY = {"1": {"Hs": "F", "D": "F", "Hy": "F"}, "2": {"Hs": "F", "D": "F", "Hy": "F", "Pt": "F"}, "3": {"D": "F", "Hy": "F", "Pd": "F", "Pt": "F", "Sc": "F"}, "4": {"D": "V", "Ma": "V"}, "5": {"L": "F", "Pa": "V", "Pt": "V", "Sc": "V"}, "6": {"Hs": "F", "D": "F"}, "7": {"Pd": "V", "Sc": "V", "Ma": "V"}, "8": {"Pa": "V", "Pt": "V", "Sc": "V", "Ma": "V"}, "9": {"F": "V", "D": "V", "Hy": "V"}, "10": {"Pd": "V", "Pa": "V", "Sc": "V"}, "11": {"L": "F", "K": "F", "D": "F", "Hy": "F"}, "12": {"F": "V"}, "13": {"D": "V", "Hy": "V", "Pd": "V", "Pt": "V", "Sc": "V"}, "14": {"Pd": "V", "Sc": "V"}, "15": {"F": "V", "Pd": "V", "Pa": "V", "Sc": "V"}, "16": {"Pd": "V", "Sc": "V"}, "17": {"D": "V", "Pt": "V", "Sc": "V"}, "18": {"Hs": "V", "D": "V", "Hy": "V"}, "19": {"F": "V"}, "20": {"F": "F"}, "21": {"Ma": "V"}, "22": {"D": "V", "Pd": "V", "Pt": "V"}, "23": {"K": "F", "Hy": "F"}, "24": {"L": "F", "F": "F"}, "25": {"D": "V", "Pt": "V"}, "26": {"Hs": "F", "Hy": "F", "Sc": "F"}, "27": {"Pd": "V", "Pt": "V"}, "28": {"D": "F", "Hy": "F", "Pd": "F", "Pa": "F"}, "29": {"Hy": "F", "Pa": "F", "Ma": "V"}, "30": {"F": "V", "Pa": "V", "Sc": "V"}, "31": {"K": "F", "Hy": "F", "Pa": "F"}, "32": {"Hs": "V"}, "33": {"K": "F", "Hy": "F"}, "34": {"K": "F", "Pd": "F", "Ma": "V"}, "35": {"Hy": "F", "Pd": "F"}, "36": {"K": "F", "D": "V", "Pt": "V"}, "37": {"Hs": "F", "D": "F", "Hy": "F"}, "38": {"F": "V", "Sc": "V", "Ma": "V"}, "39": {"Pa": "V", "Sc": "V", "Ma": "V"}, "40": {"K": "F", "D": "F", "Hy": "F"}, "41": {"K": "F", "Hy": "F", "Pd": "F"}, "42": {"D": "F", "Pt": "F", "Sc": "F"}, "43": {"K": "F", "Hy": "F", "Pd": "F", "Ma": "F"}, "44": {"Hs": "V", "D": "V", "Hy": "V", "Pt": "V"}, "45": {"Hs": "F", "Hy": "F"}, "46": {"Hs": "F", "Hy": "F", "Sc": "V"}, "47": {"L": "F"}, "48": {"F": "V"}, "49": {"Hy": "F", "Pd": "F"}, "50": {"F": "V"}, "51": {"K": "F", "Pt": "V"}, "52": {"Pd": "V"}, "53": {"L": "F"}, "54": {"Ma": "V"}, "55": {"Hs": "F", "Hy": "F"}, "56": {"K": "F", "Hy": "F"}, "57": {"Hy": "V", "Pt": "V", "Sc": "V", "Ma": "V"}, "58": {"F": "V", "Pd": "V"}, "59": {"F": "V"}, "60": {"D": "F", "Ma": "V"}, "61": {"F": "F", "K": "F"}, "62": {"Hs": "F", "Hy": "F"}, "63": {"Hs": "F", "Pa": "F", "Sc": "F"}, "64": {"F": "V", "Pa": "V", "Sc": "V"}, "65": {"K": "F", "D": "F", "Pd": "F"}, "66": {"Pa": "V", "Pt": "V", "Sc": "V"}, "67": {"K": "F", "Pa": "F"}, "68": {"Hs": "F", "Pa": "V", "Sc": "V"}, "69": {"K": "F"}, "70": {"K": "F"}, "71": {"F": "V"}};
+const CONV = {"L": {"0": 2, "1": 4, "2": 6, "3": 8, "4": 10, "5": 12}, "F": {"0": 2, "1": 4, "2": 6, "3": 9, "4": 11, "5": 14, "6": 16, "7": 18, "8": 21, "9": 23, "10": 25, "11": 28, "12": 30, "13": 33, "14": 35, "15": 37}, "K": {"0": 4, "1": 5, "2": 7, "3": 8, "4": 10, "5": 11, "6": 13, "7": 14, "8": 15, "9": 17, "10": 18, "11": 20, "12": 21, "13": 23, "14": 24, "15": 26, "16": 27}, "Hs": {"0": 2, "1": 4, "2": 6, "3": 8, "4": 10, "5": 12, "6": 14, "7": 16, "8": 18, "9": 20, "10": 22, "11": 23, "12": 25, "13": 27, "14": 29}, "D": {"0": 13, "1": 15, "2": 16, "3": 18, "4": 20, "5": 22, "6": 24, "7": 26, "8": 28, "9": 29, "10": 31, "11": 33, "12": 35, "13": 38, "14": 39, "15": 40, "16": 42, "17": 44, "18": 46, "19": 48, "20": 50}, "Hy": {"0": 10, "1": 11, "2": 13, "3": 15, "4": 16, "5": 18, "6": 19, "7": 21, "8": 22, "9": 24, "10": 25, "11": 27, "12": 29, "13": 30, "14": 32, "15": 33, "16": 35, "17": 36, "18": 38, "19": 40, "20": 41, "21": 43, "22": 44, "23": 46, "24": 47, "25": 49, "26": 50}, "Pd": {"0": 9, "1": 11, "2": 13, "3": 14, "4": 16, "5": 18, "6": 20, "7": 21, "8": 23, "9": 25, "10": 26, "11": 28, "12": 30, "13": 32, "14": 33, "15": 35, "16": 37, "17": 39, "18": 40, "19": 42}, "Pa": {"0": 5, "1": 7, "2": 8, "3": 10, "4": 12, "5": 14, "6": 15, "7": 17, "8": 19, "9": 21, "10": 22, "11": 24, "12": 26, "13": 28, "14": 29}, "Pt": {"0": 2, "1": 4, "2": 6, "3": 9, "4": 11, "5": 13, "6": 16, "7": 18, "8": 20, "9": 23, "10": 25, "11": 27, "12": 30, "13": 32, "14": 34, "15": 37, "16": 39}, "Sc": {"0": 2, "1": 4, "2": 7, "3": 10, "4": 13, "5": 15, "6": 18, "7": 21, "8": 24, "9": 26, "10": 29, "11": 32, "12": 35, "13": 37, "14": 40, "15": 43, "16": 46, "17": 48, "18": 51, "19": 54, "20": 57}, "Ma": {"0": 8, "1": 10, "2": 11, "3": 13, "4": 15, "5": 17, "6": 18, "7": 20, "8": 22, "9": 24, "10": 25, "11": 27, "12": 29}};
+const T_M = {"0": {"L": 24, "K": 24, "Hs": 23, "Pd": 25}, "1": {"L": 30, "F": 22, "K": 26, "Hs": 25, "Pd": 28}, "2": {"L": 36, "F": 28, "K": 28, "Hs": 27, "Pd": 31}, "3": {"L": 40, "F": 33, "K": 30, "Hs": 29, "D": 21, "Pd": 33}, "4": {"L": 44, "F": 37, "K": 33, "Hs": 31, "D": 23, "Pd": 36}, "5": {"L": 48, "F": 39, "K": 35, "Hs": 33, "D": 25, "Pd": 39}, "6": {"L": 52, "F": 42, "K": 37, "Hs": 35, "D": 27, "Pd": 42}, "7": {"L": 56, "F": 44, "K": 39, "Hs": 20, "D": 29, "Hy": 22, "Pd": 44, "Sc": 22}, "8": {"L": 60, "F": 47, "K": 42, "Hs": 22, "D": 30, "Hy": 24, "Pd": 47, "Pa": 20, "Pt": 20, "Sc": 24}, "9": {"L": 63, "F": 49, "K": 44, "Hs": 24, "D": 32, "Hy": 25, "Pd": 50, "Pa": 21, "Pt": 22, "Sc": 27}, "10": {"L": 67, "F": 51, "K": 46, "Hs": 27, "D": 34, "Hy": 29, "Pd": 53, "Pa": 23, "Pt": 24, "Sc": 29}, "11": {"L": 72, "F": 53, "K": 48, "Hs": 29, "D": 36, "Hy": 31, "Pd": 55, "Pa": 25, "Pt": 25, "Sc": 32}, "12": {"L": 76, "F": 56, "K": 51, "Hs": 31, "D": 38, "Hy": 33, "Pd": 58, "Pa": 27, "Pt": 27, "Sc": 34}, "13": {"L": 80, "F": 59, "K": 53, "Hs": 33, "D": 40, "Hy": 35, "Pd": 61, "Pa": 29, "Pt": 29, "Sc": 37}, "14": {"L": 84, "F": 61, "K": 55, "Hs": 35, "D": 42, "Hy": 37, "Pd": 64, "Pa": 30, "Pt": 30, "Sc": 39}, "15": {"F": 62, "K": 58, "Hs": 37, "D": 44, "Hy": 39, "Pd": 67, "Pa": 32, "Pt": 32, "Sc": 42}, "16": {"F": 64, "K": 60, "Hs": 40, "D": 45, "Hy": 42, "Pd": 69, "Pa": 34, "Pt": 33, "Sc": 44}, "17": {"F": 65, "K": 62, "Hs": 42, "D": 47, "Hy": 44, "Pd": 72, "Pa": 35, "Pt": 35, "Sc": 47}, "18": {"F": 67, "K": 64, "Hs": 44, "D": 49, "Hy": 45, "Pd": 75, "Pa": 37, "Pt": 37, "Sc": 49}, "19": {"F": 71, "K": 67, "Hs": 46, "D": 51, "Hy": 49, "Pd": 78, "Pa": 39, "Pt": 38, "Sc": 52}, "20": {"F": 73, "K": 69, "Hs": 48, "D": 53, "Hy": 51, "Pd": 81, "Pa": 41, "Pt": 40, "Sc": 54}, "21": {"F": 76, "K": 71, "Hs": 50, "D": 55, "Hy": 53, "Pd": 83, "Pa": 42, "Pt": 42, "Sc": 57}, "22": {"F": 78, "K": 73, "Hs": 53, "D": 57, "Hy": 55, "Pd": 86, "Pa": 44, "Pt": 43, "Sc": 59}, "23": {"K": 76, "Hs": 55, "D": 59, "Hy": 57, "Pd": 89, "Pa": 46, "Pt": 45, "Sc": 62}, "24": {"K": 78, "Hs": 57, "D": 61, "Hy": 59, "Pd": 92, "Pa": 48, "Pt": 47, "Sc": 64}, "25": {"K": 80, "Hs": 59, "D": 62, "Hy": 62, "Pd": 94, "Pa": 49, "Pt": 48, "Sc": 67}, "26": {"K": 82, "Hs": 61, "D": 64, "Hy": 64, "Pd": 97, "Pa": 51, "Pt": 50, "Sc": 69}, "27": {"K": 85, "Hs": 63, "D": 65, "Hy": 65, "Pd": 100, "Pa": 53, "Pt": 51, "Sc": 72}, "28": {"K": 87, "Hs": 65, "D": 69, "Hy": 68, "Pd": 103, "Pa": 55, "Pt": 53, "Sc": 74}, "29": {"K": 89, "Hs": 68, "D": 70, "Hy": 71, "Pd": 106, "Pa": 56, "Pt": 55, "Sc": 77}, "30": {"K": 91, "Hs": 70, "D": 72, "Hy": 73, "Pd": 108, "Pa": 58, "Pt": 56, "Sc": 79}, "31": {"Hs": 72, "D": 74, "Hy": 75, "Pd": 111, "Pa": 60, "Pt": 58, "Sc": 82}, "32": {"Hs": 74, "D": 76, "Hy": 77, "Pd": 114, "Pa": 62, "Pt": 60, "Sc": 84}, "33": {"Hs": 76, "D": 78, "Hy": 79, "Pd": 117, "Pa": 63, "Pt": 61, "Sc": 87}, "34": {"Hs": 78, "D": 70, "Hy": 82, "Pd": 119, "Pa": 65, "Pt": 63, "Sc": 89}, "35": {"Hs": 81, "D": 81, "Hy": 84, "Pa": 67, "Pt": 64, "Sc": 92}, "36": {"Hs": 83, "D": 83, "Hy": 86, "Pa": 69, "Pt": 66, "Sc": 94}, "37": {"Hs": 85, "D": 85, "Hy": 88, "Pa": 70, "Pt": 68, "Sc": 97}, "38": {"Hs": 87, "D": 84, "Hy": 90, "Pa": 72, "Pt": 69, "Sc": 99}, "39": {"Hs": 89, "D": 89, "Hy": 93, "Pa": 74, "Pt": 71, "Sc": 102}, "40": {"Hs": 91, "D": 91, "Hy": 95, "Pa": 76, "Pt": 73, "Sc": 104}, "41": {"Hs": 93, "D": 93, "Hy": 97, "Pa": 77, "Pt": 74, "Sc": 107}, "42": {"Hs": 96, "D": 95, "Hy": 99, "Pa": 79, "Pt": 76, "Sc": 110}, "43": {"Hs": 98, "D": 96, "Hy": 102, "Pa": 81, "Pt": 77, "Sc": 112}, "44": {"Hs": 100, "D": 98, "Hy": 104, "Pa": 83, "Pt": 79, "Sc": 115}, "45": {"Hs": 102, "D": 100, "Hy": 106, "Pa": 84, "Pt": 81, "Sc": 117}, "46": {"Hs": 104, "D": 102, "Hy": 109, "Pa": 86, "Pt": 82, "Sc": 120}, "47": {"Hs": 106, "D": 104, "Hy": 110, "Pa": 88, "Pt": 84}, "48": {"Hs": 109, "D": 106, "Hy": 113, "Pa": 90, "Pt": 86}, "49": {"Hs": 111, "D": 108, "Hy": 115, "Pa": 91, "Pt": 87}, "50": {"Hs": 113, "D": 110, "Hy": 117, "Pa": 93, "Pt": 89}, "51": {"Hs": 115, "D": 112, "Hy": 119, "Pa": 95, "Pt": 90}, "52": {"Hs": 117, "D": 113, "Pa": 97, "Pt": 92}, "53": {"Hs": 119, "D": 115, "Pa": 98, "Pt": 94}, "54": {"D": 117, "Pa": 100, "Pt": 95}, "55": {"D": 119, "Pa": 102, "Pt": 97}, "56": {"Pa": 104, "Pt": 99}, "57": {"Pa": 105, "Pt": 100}, "58": {"Pa": 107, "Pt": 102}, "59": {"Pa": 109, "Pt": 104}, "60": {"Pa": 111, "Pt": 105}, "61": {"Pa": 112, "Pt": 107}, "62": {"Pa": 114, "Pt": 108}, "63": {"Pa": 116, "Pt": 110}, "64": {"Pa": 118, "Pt": 112}, "65": {"Pa": 119, "Pt": 113}, "66": {"Pt": 115}, "67": {"Pt": 117}, "68": {"Pt": 118}, "69": {"Pt": 120}};
+const T_F = {"1": {"L": 32, "F": 24, "K": 25, "Pd": 29}, "2": {"L": 36, "F": 28, "K": 26, "Pd": 31}, "3": {"L": 40, "F": 30, "K": 27, "Pd": 33}, "4": {"L": 40, "F": 33, "K": 29, "D": 20, "Pd": 35}, "5": {"L": 42, "F": 35, "K": 31, "D": 21, "Pd": 39}, "6": {"L": 45, "F": 37, "K": 33, "D": 25, "Pd": 42}, "7": {"L": 48, "F": 39, "K": 35, "D": 26, "Hy": 22, "Pd": 44}, "8": {"L": 51, "F": 42, "K": 36, "Hs": 22, "D": 28, "Hy": 24, "Pd": 47, "Pt": 20}, "9": {"L": 53, "F": 44, "K": 39, "Hs": 23, "D": 29, "Hy": 25, "Pd": 50, "Pt": 22, "Sc": 17}, "10": {"L": 56, "F": 46, "K": 40, "Hs": 25, "D": 30, "Hy": 28, "Pd": 53, "Pt": 24, "Sc": 19}, "11": {"L": 58, "F": 48, "K": 42, "Hs": 27, "D": 32, "Hy": 32, "Pd": 55, "Pt": 25, "Sc": 21}, "12": {"L": 60, "F": 50, "K": 44, "Hs": 28, "D": 34, "Hy": 33, "Pd": 58, "Pa": 20, "Pt": 27, "Sc": 24}, "13": {"L": 61, "F": 53, "K": 45, "Hs": 29, "D": 35, "Hy": 35, "Pd": 61, "Pa": 22, "Pt": 29, "Sc": 27}, "14": {"L": 62, "F": 55, "K": 47, "Hs": 32, "D": 37, "Hy": 37, "Pd": 64, "Pa": 24, "Pt": 30, "Sc": 30}, "15": {"L": 63, "F": 57, "K": 49, "Hs": 34, "D": 39, "Hy": 39, "Pd": 67, "Pa": 26, "Pt": 32, "Sc": 42}, "16": {"L": 66, "F": 59, "K": 51, "Hs": 35, "D": 40, "Hy": 42, "Pd": 69, "Pa": 28, "Pt": 33, "Sc": 44}, "17": {"L": 69, "F": 62, "K": 53, "Hs": 38, "D": 42, "Hy": 44, "Pd": 72, "Pa": 29, "Pt": 35, "Sc": 47}, "18": {"L": 71, "F": 64, "K": 55, "Hs": 39, "D": 43, "Hy": 45, "Pd": 75, "Pa": 31, "Pt": 37, "Sc": 49}, "19": {"L": 74, "F": 67, "K": 56, "Hs": 41, "D": 45, "Hy": 48, "Pd": 78, "Pa": 33, "Pt": 38, "Sc": 52}, "20": {"L": 76, "F": 69, "K": 59, "Hs": 45, "D": 47, "Hy": 51, "Pd": 81, "Pa": 35, "Pt": 40, "Sc": 54}, "21": {"L": 78, "F": 71, "K": 60, "Hs": 46, "D": 49, "Hy": 53, "Pd": 83, "Pa": 37, "Pt": 42, "Sc": 55}, "22": {"F": 75, "K": 62, "Hs": 47, "D": 50, "Hy": 55, "Pd": 84, "Pa": 38, "Pt": 43, "Sc": 59}, "23": {"F": 76, "K": 64, "Hs": 49, "D": 53, "Hy": 57, "Pd": 89, "Pa": 40, "Pt": 45, "Sc": 62}, "24": {"F": 78, "K": 66, "Hs": 50, "D": 54, "Hy": 59, "Pd": 91, "Pa": 42, "Pt": 47, "Sc": 64}, "25": {"F": 80, "K": 67, "Hs": 52, "D": 55, "Hy": 62, "Pd": 94, "Pa": 44, "Pt": 49, "Sc": 67}, "26": {"F": 82, "K": 69, "Hs": 53, "D": 57, "Hy": 64, "Pd": 97, "Pa": 46, "Pt": 50, "Sc": 69}, "27": {"F": 85, "K": 71, "Hs": 54, "D": 59, "Hy": 65, "Pd": 100, "Pa": 47, "Pt": 51, "Sc": 73}, "28": {"F": 87, "K": 73, "Hs": 57, "D": 60, "Hy": 69, "Pd": 101, "Pa": 49, "Pt": 53, "Sc": 74}, "29": {"F": 89, "K": 75, "Hs": 59, "D": 62, "Hy": 71, "Pd": 106, "Pa": 51, "Pt": 55, "Sc": 77}, "30": {"F": 91, "K": 76, "Hs": 61, "D": 64, "Hy": 72, "Pd": 109, "Pa": 53, "Pt": 56, "Sc": 79}, "31": {"K": 78, "Hs": 63, "D": 65, "Hy": 73, "Pa": 55, "Pt": 58, "Sc": 83}, "32": {"K": 80, "Hs": 65, "D": 67, "Hy": 77, "Pd": 114, "Pa": 56, "Pt": 60, "Sc": 84}, "33": {"K": 82, "Hs": 66, "D": 69, "Hy": 79, "Pd": 117, "Pa": 58, "Pt": 61, "Sc": 87}, "34": {"K": 84, "Hs": 68, "D": 70, "Hy": 82, "Pd": 119, "Pa": 60, "Pt": 63, "Sc": 89}, "35": {"K": 86, "Hs": 70, "D": 72, "Hy": 84, "Pa": 62, "Pt": 64, "Sc": 92}, "36": {"K": 87, "Hs": 72, "D": 74, "Hy": 85, "Pa": 64, "Pt": 66, "Sc": 94}, "37": {"K": 89, "Hs": 74, "D": 75, "Hy": 87, "Pa": 65, "Pt": 68, "Sc": 95}, "38": {"K": 91, "Hs": 75, "D": 77, "Hy": 90, "Pa": 67, "Pt": 69, "Sc": 98}, "39": {"K": 93, "Hs": 77, "D": 79, "Hy": 93, "Pa": 69, "Pt": 71, "Sc": 102}, "40": {"K": 95, "Hs": 78, "D": 81, "Hy": 95, "Pa": 71, "Pt": 73, "Sc": 104}, "41": {"K": 97, "Hs": 80, "D": 82, "Hy": 97, "Pa": 73, "Pt": 74, "Sc": 107}, "42": {"K": 99, "Hs": 82, "D": 84, "Hy": 99, "Pa": 74, "Pt": 76, "Sc": 110}, "43": {"K": 100, "Hs": 85, "D": 85, "Hy": 102, "Pa": 76, "Pt": 77, "Sc": 112}, "44": {"K": 102, "Hs": 86, "D": 87, "Hy": 104, "Pa": 78, "Pt": 79, "Sc": 115}, "45": {"K": 104, "Hs": 88, "D": 89, "Hy": 106, "Pa": 80, "Pt": 81, "Sc": 117}, "46": {"K": 106, "Hs": 90, "D": 91, "Hy": 109, "Pa": 82, "Pt": 82, "Sc": 120}, "47": {"K": 108, "Hs": 92, "D": 93, "Hy": 110, "Pa": 83, "Pt": 84}, "48": {"K": 109, "Hs": 94, "D": 94, "Hy": 113, "Pa": 85, "Pt": 85}, "49": {"Hs": 95, "D": 95, "Hy": 115, "Pa": 87, "Pt": 87}, "50": {"Hs": 97, "D": 98, "Hy": 117, "Pa": 89, "Pt": 89}, "51": {"Hs": 99, "D": 99, "Hy": 119, "Pa": 91, "Pt": 90}, "52": {"Hs": 101, "D": 102, "Pa": 92, "Pt": 92}, "53": {"Hs": 102, "D": 103, "Pa": 94, "Pt": 94}, "54": {"Hs": 103, "D": 104, "Pa": 95, "Pt": 95}, "55": {"Hs": 104, "D": 105, "Pa": 98, "Pt": 97}, "56": {"Hs": 106, "D": 109, "Pa": 100, "Pt": 99}, "57": {"Hs": 110, "D": 110, "Pt": 100}, "58": {"Hs": 112, "D": 111, "Pa": 103, "Pt": 102}, "59": {"Hs": 114, "D": 113, "Pa": 105, "Pt": 104}, "60": {"Hs": 115, "D": 115, "Pa": 107, "Pt": 105}, "61": {"Pa": 109, "Pt": 107}, "62": {"Pa": 111, "Pt": 108}, "63": {"Pa": 112, "Pt": 110}, "64": {"Pa": 114, "Pt": 112}, "65": {"Pa": 116, "Pt": 113}, "66": {"Pa": 118, "Pt": 115}, "67": {"Pa": 120, "Pt": 117}, "68": {"Pt": 118}, "69": {"Pt": 120}};
+const K_CORR = {"30": [15, 12, 6], "29": [15, 12, 6], "28": [14, 11, 6], "27": [14, 11, 5], "26": [13, 10, 5], "25": [13, 10, 5], "24": [12, 10, 5], "23": [12, 9, 5], "22": [11, 9, 4], "21": [11, 8, 4], "20": [10, 8, 4], "19": [10, 8, 4], "18": [9, 7, 4], "17": [9, 7, 3], "16": [8, 6, 3], "15": [8, 6, 3], "14": [7, 6, 3], "13": [7, 5, 3], "12": [6, 5, 2], "11": [6, 4, 2], "10": [5, 4, 2], "9": [5, 4, 2], "8": [4, 3, 2], "7": [4, 3, 1], "6": [3, 2, 1], "5": [3, 2, 1], "4": [2, 2, 1], "3": [2, 2, 1], "2": [1, 1, 0], "1": [1, 1, 0], "0": [0, 0, 0]};
+const APPS_SCRIPT_URL = "PLACEHOLDER_APPS_SCRIPT_URL";
+const SCALE_NAMES = {
+  L:'Escala L (Mentira)',F:'Escala F (Validade)',K:'Escala K (Correcção)',
+  Hs:'1 — Hipocondria (Hs)',D:'2 — Depressão (D)',Hy:'3 — Histeria (Hy)',
+  Pd:'4 — Desvio Psicopata (Pd)',Pa:'6 — Paranóia (Pa)',
+  Pt:'7 — Psicastenia (Pt)',Sc:'8 — Esquizofrenia (Sc)',Ma:'9 — Mania (Ma)'
+};
+const VALIDITY_SCALES = ['L','F','K'];
+const CLINICAL_SCALES = ['Hs','D','Hy','Pd','Pa','Pt','Sc','Ma'];
+// K correction: Hs+=0.5K, Pd+=0.4K, Pt+=1K, Sc+=1K, Ma+=0.2K
+const K_CORRECTIONS = {Hs:0.5, Pd:0.4, Pt:1.0, Sc:1.0, Ma:0.2};
+
+// Progress
+document.getElementById('frm').addEventListener('change', updatePg);
+function updatePg(){
+  let n=0;
+  for(let i=1;i<=71;i++) if(document.querySelector(`input[name="q${i}"]:checked`)) n++;
+  const pct=Math.round(n/71*100);
+  document.getElementById('pgFill').style.width=pct+'%';
+  document.getElementById('pgLbl').textContent=n+' de 71 questões respondidas';
+}
+
+function getKCorr(k_raw){
+  const r = Math.min(30, Math.max(0, Math.round(k_raw)));
+  return K_CORR[String(r)] || [0,0,0];
+}
+
+function lookupT(table, raw_corrected){
+  raw_corrected = Math.round(raw_corrected);
+  // Exact match
+  if(table[String(raw_corrected)] !== undefined) return table[String(raw_corrected)];
+  // Interpolate: find nearest
+  const keys = Object.keys(table).map(Number).sort((a,b)=>a-b);
+  if(!keys.length) return null;
+  if(raw_corrected <= keys[0]) return table[String(keys[0])];
+  if(raw_corrected >= keys[keys.length-1]) return table[String(keys[keys.length-1])];
+  // Find surrounding keys
+  let lo=keys[0], hi=keys[keys.length-1];
+  for(const k of keys){ if(k<=raw_corrected) lo=k; else{ hi=k; break; } }
+  const t_lo=table[String(lo)], t_hi=table[String(hi)];
+  if(typeof t_lo === 'number' && typeof t_hi === 'number')
+    return Math.round(t_lo + (raw_corrected-lo)/(hi-lo)*(t_hi-t_lo));
+  return t_lo || t_hi || null;
+}
+
+function getT(gender, scale, raw_corrected){
+  const table = gender==='M' ? T_M : T_F;
+  const key = String(Math.round(raw_corrected));
+  const row = table[key];
+  if(row && row[scale]!==undefined) return row[scale];
+  // Try interpolation
+  const keys = Object.keys(table).map(Number).sort((a,b)=>a-b);
+  if(!keys.length) return null;
+  const rc = Math.round(raw_corrected);
+  if(rc <= keys[0]){ const r=table[String(keys[0])]; return r ? r[scale]||null : null; }
+  if(rc >= keys[keys.length-1]){ const r=table[String(keys[keys.length-1])]; return r ? r[scale]||null : null; }
+  let lo=keys[0],hi=keys[keys.length-1];
+  for(const k of keys){ if(k<=rc) lo=k; else{ hi=k; break; } }
+  const rlo=table[String(lo)], rhi=table[String(hi)];
+  const tlo = rlo ? rlo[scale] : null;
+  const thi = rhi ? rhi[scale] : null;
+  if(tlo!==null && thi!==null) return Math.round(tlo+(rc-lo)/(hi-lo)*(thi-tlo));
+  return tlo||thi||null;
+}
+
+document.getElementById('frm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const err = document.getElementById('errMsg');
+  err.style.display='none';
+
+  const nome = document.getElementById('nome').value.trim();
+  const dataNasc = document.getElementById('data_nasc').value;
+  const sexoEl = document.querySelector('input[name="sexo"]:checked');
+  const esc = document.getElementById('escolaridade').value;
+  const dataAv = document.getElementById('data_av').value;
+  if(!nome||!dataNasc||!sexoEl||!esc||!dataAv){
+    err.textContent='Por favor preencha todos os campos obrigatórios.';
+    err.style.display='block'; window.scrollTo({top:0,behavior:'smooth'}); return;
+  }
+  const missing=[];
+  for(let i=1;i<=71;i++) if(!document.querySelector(`input[name="q${i}"]:checked`)) missing.push(i);
+  if(missing.length){
+    err.textContent=`Há ${missing.length} questão(ões) sem resposta. Primeira: questão ${missing[0]}.`;
+    err.style.display='block';
+    const el=document.getElementById('q'+missing[0]);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); return;
+  }
+
+  const gender = sexoEl.value;
+
+  // Collect responses
+  const resp={};
+  for(let i=1;i<=71;i++) resp[i]=document.querySelector(`input[name="q${i}"]:checked`).value;
+
+  // Calculate raw scores (Mini-Mult)
+  const rawMM = {L:0,F:0,K:0,Hs:0,D:0,Hy:0,Pd:0,Pa:0,Pt:0,Sc:0,Ma:0};
+  for(let i=1;i<=71;i++){
+    const key = SCORING_KEY[i] || {};
+    for(const [scale, correct] of Object.entries(key)){
+      if(rawMM[scale]!==undefined && resp[i]===correct) rawMM[scale]++;
+    }
+  }
+
+  // Convert to MMPI raw scores
+  const rawMMPI={};
+  for(const scale of Object.keys(rawMM)){
+    const tbl = CONV[scale] || {};
+    const mm_score = rawMM[scale];
+    rawMMPI[scale] = tbl[String(mm_score)] !== undefined ? tbl[String(mm_score)] : mm_score;
+  }
+
+  // K corrections: Hs+=0.5K, Pd+=0.4K, Pt+=1K, Sc+=1K, Ma+=0.2K
+  const k_raw = rawMMPI['K'] || 0;
+  const [k5, k4, k2] = getKCorr(k_raw);  // 0.5K, 0.4K, 0.2K
+  const rawCorr = Object.assign({}, rawMMPI);
+  rawCorr['Hs'] = rawMMPI['Hs'] + k5;
+  rawCorr['Pd'] = rawMMPI['Pd'] + k4;
+  rawCorr['Pt'] = rawMMPI['Pt'] + k_raw;   // +1K
+  rawCorr['Sc'] = rawMMPI['Sc'] + k_raw;   // +1K
+  rawCorr['Ma'] = rawMMPI['Ma'] + k2;
+
+  // T-scores
+  const tScores={};
+  for(const scale of [...VALIDITY_SCALES,...CLINICAL_SCALES]){
+    tScores[scale] = getT(gender, scale, rawCorr[scale]);
+  }
+
+  // Build results table
+  const tbody = document.getElementById('resBody');
+  tbody.innerHTML='';
+  const allScales = [...VALIDITY_SCALES,...CLINICAL_SCALES];
+  for(const scale of allScales){
+    const T = tScores[scale];
+    const Tval = T !== null ? T : '—';
+    const pct = T !== null ? Math.min(100, Math.max(0, (T-20)/100*100)) : 0;
+    let fillClass = '';
+    if(T>=70) fillClass='vhigh'; else if(T>=65) fillClass='high';
+    const isClinical = CLINICAL_SCALES.includes(scale);
+    const corrNote = isClinical && K_CORRECTIONS[scale] ? ` (+${K_CORRECTIONS[scale]}K)` : '';
+    tbody.innerHTML+=`<tr>
+      <td><strong>${scale}</strong></td>
+      <td style="font-size:13px">${SCALE_NAMES[scale]||scale}</td>
+      <td>${rawMM[scale]}</td>
+      <td>${Math.round(rawCorr[scale])}${corrNote}</td>
+      <td>${Tval}</td>
+      <td style="font-size:13px;font-weight:600;color:${T>=65?'#c0392b':'var(--blue)'}">${Tval}</td>
+      <td class="t-bar-cell"><div class="t-bar"><div class="t-fill ${fillClass}" style="width:${pct}%"></div></div></td>
+    </tr>`;
+  }
+
+  // Validity badges
+  const vbadges = document.getElementById('validityBadges');
+  vbadges.innerHTML='';
+  const L_T=tScores['L']||50, F_T=tScores['F']||50, K_T=tScores['K']||50;
+  const fkIdx = rawMMPI['F'] - rawMMPI['K'];
+  
+  let lClass='ok', lText='L normal';
+  if(L_T>=70){lClass='bad'; lText='L elevado — possível distorção';}
+  else if(L_T>=65){lClass='warn'; lText='L ligeiramente elevado';}
+  
+  let fClass='ok', fText='F normal';
+  if(F_T>=80){fClass='bad'; fText='F muito elevado — respostas aleatórias?';}
+  else if(F_T>=70){fClass='warn'; fText='F elevado — verificar validade';}
+  
+  let kClass='ok', kText='K normal';
+  if(K_T>=70){kClass='warn'; kText='K elevado — defesa/negação';}
+  else if(K_T<=40){kClass='warn'; kText='K baixo — autocrítica elevada';}
+  
+  vbadges.innerHTML=`
+    <span class="badge ${lClass}">${lText} (T=${L_T||'—'})</span>
+    <span class="badge ${fClass}">${fText} (T=${F_T||'—'})</span>
+    <span class="badge ${kClass}">${kText} (T=${K_T||'—'})</span>
+    <span class="badge ok">F-K = ${fkIdx}</span>
+  `;
+
+  let age='';
+  if(dataNasc){
+    const dob=new Date(dataNasc), today=new Date();
+    age=Math.floor((today-dob)/(365.25*24*3600*1000));
+  }
+
+  document.getElementById('resSub').textContent=
+    nome+' · '+age+' anos · '+(gender==='M'?'Masculino':'Feminino')+' · '+new Date(dataAv).toLocaleDateString('pt-PT');
+
+  document.getElementById('resNote').innerHTML=
+    '<strong>Nota:</strong> Nota T ≥ 65 indica elevação clinicamente significativa. '+'Nota T ≥ 70 indica elevação marcada.';
+
+  // Send to Apps Script if configured
+  if(APPS_SCRIPT_URL !== 'PLACEHOLDER_APPS_SCRIPT_URL'){
+    const payload = {instrumento:'Mini-Mult',nome,data_nasc:dataNasc,idade:age,sexo:gender,
+      escolaridade:esc,profissao:document.getElementById('profissao').value,
+      data_avaliacao:dataAv,psicologo:document.getElementById('psico').value,
+      ...Object.fromEntries(Object.entries(rawMM).map(([k,v])=>[`raw_mm_${k}`,v])),
+      ...Object.fromEntries(Object.entries(tScores).map(([k,v])=>[`T_${k}`,v||''])),
+      ...Object.fromEntries(Object.entries(resp).map(([k,v])=>[`q${k}`,v]))
+    };
+    fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}})
+      .catch(()=>{});
+  }
+
+  document.getElementById('frm').style.display='none';
+  document.getElementById('resCard').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+</script>
+</body>
+</html>
