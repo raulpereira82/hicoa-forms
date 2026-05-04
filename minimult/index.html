@@ -75,6 +75,29 @@ header p{font-size:13px;opacity:.8}
 .badge.warn{background:#fef9c3;color:#854d0e}
 .badge.bad{background:#fee2e2;color:#991b1b}
 .res-note{font-size:13px;color:var(--muted);margin-top:18px;padding:11px 14px;background:#fff8e6;border-radius:8px;border-left:3px solid #f0a500}
+
+  /* OBRIGADO */
+  #obrigado{display:none;text-align:center;padding:48px 24px;}
+  .obrig-box{background:white;border-radius:20px;padding:44px 32px;max-width:520px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.10);}
+  .obrig-icon{font-size:3.5rem;margin-bottom:20px;}
+  .obrig-h{color:#27ae60;font-size:1.4rem;font-weight:700;margin-bottom:14px;}
+  .obrig-p{font-size:1rem;color:#445;line-height:1.7;margin-bottom:20px;}
+  .obrig-fine{font-size:0.82rem;color:#778;border-top:1px solid #eee;padding-top:14px;}
+  .obrig-doc-link{display:none;background:#1a4a8a;color:white;padding:10px 22px;border-radius:8px;text-decoration:none;font-size:0.9rem;margin-top:10px;}
+  /* PAINEL CLÍNICO */
+  #clinicPanel{display:none;margin-top:20px;}
+  .clinic-header{background:#1a2a5a;color:white;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .clinic-header h3{margin:0;font-size:1rem;}
+  .btn-clinic{background:white;color:#1a2a5a;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.85rem;}
+  .btn-clinic:hover{background:#e8ecf5;}
+  .sheets-url-row{display:flex;gap:8px;margin-top:8px;}
+  .sheets-url-row input{flex:1;padding:8px 12px;border:1.5px solid #ccd;border-radius:6px;font-size:0.87rem;}
+  .sheets-status{font-size:0.83rem;margin-top:6px;padding:6px 10px;border-radius:6px;}
+  .sheets-status.ok{background:#dcfce7;color:#166534;}
+  .sheets-status.error{background:#fef2f2;color:#991b1b;}
+  .sheets-status.loading{background:#eff6ff;color:#1e40af;}
+  .doc-link-box{display:none;margin-top:10px;padding:10px 14px;background:#f0f9ff;border:1.5px solid #0ea5e9;border-radius:8px;}
+  .doc-link-box a{color:#0369a1;font-weight:600;text-decoration:none;font-size:0.88rem;}
 </style>
 </head>
 <body>
@@ -843,6 +866,41 @@ header p{font-size:13px;opacity:.8}
       <button type="submit" class="btn" id="btnSub">Submeter e calcular resultados</button>
     </div>
   </form>
+  <!-- OBRIGADO (visível ao cliente após submissão) -->
+  <div id="obrigado">
+    <div class="obrig-box">
+      <div class="obrig-icon">✅</div>
+      <h2 class="obrig-h">Questionário submetido com sucesso!</h2>
+      <p class="obrig-p">
+        Obrigado pelo seu preenchimento.<br><br>
+        O <strong>Dr. Raul Pereira</strong> irá analisar as suas respostas e entrar em contacto consigo brevemente.
+      </p>
+      <a id="obrigadoDocLink" class="obrig-doc-link" href="#" target="_blank">📄 Ver relatório</a>
+      <p class="obrig-fine">As suas respostas foram registadas de forma segura e confidencial.</p>
+      <p style="margin-top:18px;"><button onclick="mostrarResultados()" style="background:none;border:none;color:#9ba3af;font-size:0.75rem;cursor:pointer;text-decoration:underline;">Acesso clínico</button></p>
+    </div>
+  </div>
+
+  <!-- PAINEL CLÍNICO (apenas para o clínico, separado do cliente) -->
+  <div id="clinicPanel">
+    <div class="clinic-header">
+      <h3>🩺 Painel Clínico — Mini-Mult</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-clinic" onclick="novoQuestionario()">↺ Novo questionário</button>
+        <button class="btn-clinic" onclick="window.print()">🖨️ Imprimir</button>
+      </div>
+    </div>
+    <!-- Apps Script URL -->
+    <div style="background:white;border-radius:12px;padding:16px 20px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+      <div style="font-size:0.88rem;font-weight:600;color:#1a2a5a;margin-bottom:6px;">🔗 Enviar para Google Sheets</div>
+      <div class="sheets-url-row">
+        <input type="url" id="appsScriptInput" placeholder="https://script.google.com/macros/s/..." oninput="localStorage.setItem('mm_appsScriptUrl',this.value)">
+        <button class="btn-clinic" style="background:#1a4a8a;color:white;" onclick="enviarParaSheets(false)">Enviar</button>
+      </div>
+      <div class="sheets-status" id="sheetsStatus" style="display:none;"></div>
+      <div class="doc-link-box" id="docLinkBox"><a id="docLinkBtn" href="#" target="_blank">📄 Abrir relatório no Google Docs</a></div>
+    </div>
+
   <!-- RESULTS -->
   <div class="results" id="resCard">
     <div class="res-title">✓ Resultados calculados</div>
@@ -874,6 +932,13 @@ const CLINICAL_SCALES = ['Hs','D','Hy','Pd','Pa','Pt','Sc','Ma'];
 const K_CORRECTIONS = {Hs:0.5, Pd:0.4, Pt:1.0, Sc:1.0, Ma:0.2};
 
 // Progress
+// Pré-carregar URL Apps Script guardado
+(function(){
+  const saved = localStorage.getItem('mm_appsScriptUrl');
+  const el = document.getElementById('appsScriptInput');
+  if(saved && el) el.value = saved;
+})();
+
 document.getElementById('frm').addEventListener('change', updatePg);
 function updatePg(){
   let n=0;
@@ -1061,10 +1126,76 @@ document.getElementById('frm').addEventListener('submit', function(e){
       .catch(()=>{});
   }
 
+  // Guardar dados para o clínico
+  window._mmData = {
+    instrumento:'Mini-Mult', nome, data_nasc:dataNasc, idade:age,
+    sexo:gender, escolaridade:esc,
+    profissao: document.getElementById('profissao').value,
+    data_avaliacao:dataAv, psicologo:document.getElementById('psico').value,
+    ...Object.fromEntries(Object.entries(rawMM).map(([k,v])=>[`raw_mm_${k}`,v])),
+    ...Object.fromEntries(Object.entries(tScores).map(([k,v])=>[`T_${k}`,v||''])),
+    ...Object.fromEntries(Object.entries(resp).map(([k,v])=>[`q${k}`,v]))
+  };
+
+  // Envio automático para Apps Script em background
+  const asUrl = localStorage.getItem('mm_appsScriptUrl') || APPS_SCRIPT_URL;
+  if(asUrl && asUrl !== 'PLACEHOLDER_APPS_SCRIPT_URL'){
+    enviarParaSheets(true, asUrl);
+  }
+
+  // Cliente vê só o obrigado — resultados ficam na secção do clínico
   document.getElementById('frm').style.display='none';
-  document.getElementById('resCard').classList.add('show');
+  const pbar = document.getElementById('pgbar');
+  if(pbar) pbar.style.display='none';
+  document.getElementById('obrigado').style.display='block';
+  document.getElementById('clinicPanel').style.display='none'; // fechado por defeito
   window.scrollTo({top:0,behavior:'smooth'});
 });
+
+/* ─── ENVIO PARA GOOGLE APPS SCRIPT ─── */
+function enviarParaSheets(auto, url){
+  const urlField = document.getElementById('appsScriptInput');
+  const u = url || (urlField ? urlField.value.trim() : '') || APPS_SCRIPT_URL;
+  const status = document.getElementById('sheetsStatus');
+  if(!u || u==='PLACEHOLDER_APPS_SCRIPT_URL'){
+    if(status){ status.textContent='⚠️ Cola o URL do Apps Script acima.'; status.className='sheets-status error'; }
+    return;
+  }
+  if(!window._mmData){ if(status){ status.textContent='⚠️ Calcular primeiro.'; status.className='sheets-status error'; } return; }
+  if(status){ status.textContent = auto?'⏳ A guardar automaticamente...':'⏳ A enviar...'; status.className='sheets-status loading'; }
+  localStorage.setItem('mm_appsScriptUrl', u);
+  fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(window._mmData)})
+    .then(r=>r.json())
+    .then(resp=>{
+      if(resp.status==='ok'){
+        if(status){ status.textContent='✅ Dados guardados!'; status.className='sheets-status ok'; }
+        if(resp.docUrl){
+          const lb=document.getElementById('docLinkBox');
+          const lb2=document.getElementById('docLinkBtn');
+          if(lb2) lb2.href=resp.docUrl;
+          if(lb) lb.style.display='block';
+          // Mostrar link também no obrigado
+          const ol=document.getElementById('obrigadoDocLink');
+          if(ol){ ol.href=resp.docUrl; ol.style.display='inline-block'; }
+        }
+      } else throw new Error(resp.msg||'Erro');
+    })
+    .catch(()=>{
+      if(status){ status.textContent='✅ Enviado! Confirmar no Google Sheets.'; status.className='sheets-status ok'; }
+      fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(window._mmData)}).catch(()=>{});
+    });
+}
+
+function mostrarResultados(){
+  document.getElementById('clinicPanel').style.display='block';
+  document.getElementById('resCard').classList.add('show');
+  window.scrollTo({top:document.getElementById('clinicPanel').offsetTop-20,behavior:'smooth'});
+}
+function novoQuestionario(){
+  if(!confirm('Iniciar novo questionário? Os dados actuais não ficam guardados localmente.')) return;
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>location.reload(),400);
+}
 </script>
 </body>
 </html>
