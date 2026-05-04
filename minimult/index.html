@@ -75,6 +75,23 @@ header p{font-size:13px;opacity:.8}
 .badge.warn{background:#fef9c3;color:#854d0e}
 .badge.bad{background:#fee2e2;color:#991b1b}
 .res-note{font-size:13px;color:var(--muted);margin-top:18px;padding:11px 14px;background:#fff8e6;border-radius:8px;border-left:3px solid #f0a500}
+.items-analysis{background:white;border-radius:12px;padding:16px 20px;margin-top:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.items-analysis-title{font-size:1rem;font-weight:700;color:#1a2a5a;margin-bottom:8px;}
+.items-intro{font-size:0.82rem;color:#555;margin-bottom:14px;line-height:1.5;}
+.scale-block{margin-bottom:22px;}
+.scale-block-title{font-size:0.9rem;font-weight:700;padding:5px 10px;border-radius:6px;margin-bottom:6px;display:inline-block;}
+.scale-block-title.elevated{background:#fde8e8;color:#991b1b;}
+.scale-block-title.moderate{background:#fef3c7;color:#92400e;}
+.items-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+.items-table th{background:#3d4f6e;color:white;padding:5px 8px;text-align:left;font-weight:600;}
+.items-table td{padding:5px 8px;border-bottom:1px solid #e5e7eb;vertical-align:top;}
+.items-table tr:nth-child(even) td{background:#f9fafb;}
+.items-table tr.scored td{background:#fef2f2;}
+.items-table tr.scored .contrib{color:#991b1b;font-weight:700;}
+.items-table td.num{font-weight:700;color:#374151;min-width:28px;width:32px;}
+.items-table td.qtxt{max-width:360px;}
+.items-summary{font-size:0.8rem;color:#444;margin-top:5px;font-style:italic;}
+.scale-nota-k{font-size:0.77rem;color:#555;font-style:italic;margin-bottom:8px;padding:5px 10px;background:#eef2ff;border-radius:5px;border-left:3px solid #6b7cb8;}
 
   /* OBRIGADO */
   #obrigado{display:none;text-align:center;padding:48px 24px;}
@@ -912,8 +929,88 @@ header p{font-size:13px;opacity:.8}
     </table>
     <div class="res-note" id="resNote"></div>
   </div>
+
+  <!-- ANÁLISE DE ITENS POR ESCALA ELEVADA -->
+  <div class="items-analysis" id="itemsAnalysis" style="display:none;">
+    <div class="items-analysis-title">📋 Análise de Itens — Escalas Elevadas</div>
+    <p class="items-intro">Para cada escala com elevação (T ≥ 65), são apresentados todos os itens pertencentes a essa escala, com a resposta do cliente e se contribuiu para a pontuação. Linhas a vermelho = itens que cotaram. Reveja-os para verificar se o cliente compreendeu correctamente a questão.</p>
+    <div id="itemsContent"></div>
+  </div>
 </div>
 <script>
+const QUESTIONS = {
+  1:"Tenho bom apetite",
+  2:"Quase sempre acordo bem disposto",
+  3:"A minha vida de todos os dias está cheia de coisas que me interessam",
+  4:"Trabalho num estado de grande tensão nervosa",
+  5:"Às vezes penso em coisas demasiado indecentes para poder falar delas",
+  6:"Raramente tenho prisão de ventre",
+  7:"Há alturas em que desejo muito deixar a minha casa",
+  8:"Algumas vezes tenho crises de riso ou de choro que não consigo impedir",
+  9:"Sofro de náuseas e vómitos",
+  10:"Parece que ninguém me compreende",
+  11:"Às vezes apetece-me praguejar",
+  12:"Tenho pesadelos quase todas as noites",
+  13:"Tenho dificuldade em fixar a atenção quando trabalho ou quando estou ocupado",
+  14:"Tenho passado por coisas muito especiais e esquisitas",
+  15:"Se os outros tivessem querido, concerteza eu teria mais sorte",
+  16:"Numa certa altura da minha infância, aconteceu-me roubar pequenas coisas",
+  17:"Tenho tido períodos durante os quais nada pude fazer bem feito, porque não conseguia tomar atenção a nada",
+  18:"O meu sono é agitado e incómodo",
+  19:"Quando estou ao pé de outras pessoas, sinto-me contrariado porque ouço coisas esquisitas",
+  20:"A maior parte das pessoas que me conhecem gostam de mim",
+  21:"Muitas vezes sou obrigado a receber ordens de pessoas que sabem menos do que eu",
+  22:"Gostava de ser tão feliz como os outros parecem ser",
+  23:"Acho que muitas pessoas aumentam as suas desgraças só para receberem a simpatia e a ajuda dos outros",
+  24:"Às vezes fico furioso",
+  25:"Acho que tenho pouca confiança em mim",
+  26:"Nunca reparei que os meus músculos estremeçam ou tremam duma maneira incómoda e estranha",
+  27:"A maior parte das vezes tenho a impressão de que fiz qualquer coisa mal ou desastrada",
+  28:"Sinto-me quase sempre feliz",
+  29:"Há pessoas que são tão autoritárias que tenho vontade de fazer o contrário do que elas dizem, mesmo que eu tenha a certeza de que elas têm razão",
+  30:"Tenho a impressão de que os outros me tentam prejudicar",
+  31:"Acho que todas as pessoas são capazes de usar meios pouco honestos para ganhar qualquer coisa ou qualquer vantagem em vez de perderem",
+  32:"Tenho muitas vezes problemas com o meu estômago ou com os meus intestinos",
+  33:"Muitas vezes não percebo porque sou brusco e rabujento",
+  34:"Às vezes os meus pensamentos andam tão depressa que não consigo contá-los",
+  35:"Estou convencido de que tenho na minha casa uma vida familiar tão agradável como a maior parte das pessoas que conheço",
+  36:"Às vezes sinto que não sirvo para nada",
+  37:"Nos últimos anos tenho gozado, geralmente de boa saúde",
+  38:"Há alturas em que faço coisas sem saber mais tarde o que fiz realmente",
+  39:"Acho que muitas vezes tenho sido castigado sem razão",
+  40:"Nunca me senti tão bom como agora",
+  41:"Não me importo com o que os outros pensam de mim",
+  42:"Acho que tenho boa memória",
+  43:"Para mim é difícil começar uma conversa quando encontro pessoas que não conheço",
+  44:"Muitas vezes sinto um estado de fraqueza geral",
+  45:"Tenho muito poucas vezes dores de cabeça",
+  46:"Não acho difícil conservar o equilíbrio quando ando",
+  47:"Não gosto de toda a gente que conheço",
+  48:"Há pessoas que tentam aproveitar-se das minhas ideias e dos meus pensamentos",
+  49:"Gostava de não ser envergonhado",
+  50:"Estou convencido de que os meus pecados não podem ser perdoados",
+  51:"Preocupo-me muitas vezes com coisas que não são muito importantes",
+  52:"Os meus pais muitas vezes criticam as pessoas com quem me dou",
+  53:"Às vezes acontece-me dizer um pouco mal dos outros",
+  54:"Há momentos em que tenho a impressão de que o meu espírito trabalha melhor do que é costume",
+  55:"Quase nunca senti palpitações e raramente me falta o fôlego",
+  56:"Fico furioso com facilidade, mas esqueço-me depressa",
+  57:"Tenho alturas em que estou tão nervoso que sou incapaz de estar sentado numa cadeira",
+  58:"Os meus pais e os meus amigos acham que eu tenho mais defeitos do que realmente tenho",
+  59:"Ninguém se preocupa com o que pode acontecer aos outros",
+  60:"Não censuro uma pessoa que se aproveita de outra, se essa outra deixar",
+  61:"Há alturas em que me sinto cheio de energia",
+  62:"A minha vista não tem enfraquecido",
+  63:"Raramente sinto barulhos ou zumbidos nos ouvidos",
+  64:"Numa ou em várias alturas da minha vida, senti que alguém tentava hipnotizar-me",
+  65:"Às vezes sinto-me cheio de alegria sem nenhuma razão especial",
+  66:"Mesmo quando estou ao pé de outras pessoas, sinto-me só a maior parte do tempo",
+  67:"Julgo que quase toda a gente é capaz de mentir para se livrar de uma situação desagradável",
+  68:"Sou mais sensível que a maioria das pessoas",
+  69:"Às vezes o meu espírito parece que trabalha mais devagar do que é costume",
+  70:"As pessoas desiludem-me muitas vezes",
+  71:"Tenho abusado das bebidas alcoólicas"
+};
 const SCORING_KEY = {"1": {"Hs": "F", "D": "F", "Hy": "F"}, "2": {"Hs": "F", "D": "F", "Hy": "F", "Pt": "F"}, "3": {"D": "F", "Hy": "F", "Pd": "F", "Pt": "F", "Sc": "F"}, "4": {"D": "V", "Ma": "V"}, "5": {"L": "F", "Pa": "V", "Pt": "V", "Sc": "V"}, "6": {"Hs": "F", "D": "F"}, "7": {"Pd": "V", "Sc": "V", "Ma": "V"}, "8": {"Pa": "V", "Pt": "V", "Sc": "V", "Ma": "V"}, "9": {"F": "V", "D": "V", "Hy": "V"}, "10": {"Pd": "V", "Pa": "V", "Sc": "V"}, "11": {"L": "F", "K": "F", "D": "F", "Hy": "F"}, "12": {"F": "V"}, "13": {"D": "V", "Hy": "V", "Pd": "V", "Pt": "V", "Sc": "V"}, "14": {"Pd": "V", "Sc": "V"}, "15": {"F": "V", "Pd": "V", "Pa": "V", "Sc": "V"}, "16": {"Pd": "V", "Sc": "V"}, "17": {"D": "V", "Pt": "V", "Sc": "V"}, "18": {"Hs": "V", "D": "V", "Hy": "V"}, "19": {"F": "V"}, "20": {"F": "F"}, "21": {"Ma": "V"}, "22": {"D": "V", "Pd": "V", "Pt": "V"}, "23": {"K": "F", "Hy": "F"}, "24": {"L": "F", "F": "F"}, "25": {"D": "V", "Pt": "V"}, "26": {"Hs": "F", "Hy": "F", "Sc": "F"}, "27": {"Pd": "V", "Pt": "V"}, "28": {"D": "F", "Hy": "F", "Pd": "F", "Pa": "F"}, "29": {"Hy": "F", "Pa": "F", "Ma": "V"}, "30": {"F": "V", "Pa": "V", "Sc": "V"}, "31": {"K": "F", "Hy": "F", "Pa": "F"}, "32": {"Hs": "V"}, "33": {"K": "F", "Hy": "F"}, "34": {"K": "F", "Pd": "F", "Ma": "V"}, "35": {"Hy": "F", "Pd": "F"}, "36": {"K": "F", "D": "V", "Pt": "V"}, "37": {"Hs": "F", "D": "F", "Hy": "F"}, "38": {"F": "V", "Sc": "V", "Ma": "V"}, "39": {"Pa": "V", "Sc": "V", "Ma": "V"}, "40": {"K": "F", "D": "F", "Hy": "F"}, "41": {"K": "F", "Hy": "F", "Pd": "F"}, "42": {"D": "F", "Pt": "F", "Sc": "F"}, "43": {"K": "F", "Hy": "F", "Pd": "F", "Ma": "F"}, "44": {"Hs": "V", "D": "V", "Hy": "V", "Pt": "V"}, "45": {"Hs": "F", "Hy": "F"}, "46": {"Hs": "F", "Hy": "F", "Sc": "V"}, "47": {"L": "F"}, "48": {"F": "V"}, "49": {"Hy": "F", "Pd": "F"}, "50": {"F": "V"}, "51": {"K": "F", "Pt": "V"}, "52": {"Pd": "V"}, "53": {"L": "F"}, "54": {"Ma": "V"}, "55": {"Hs": "F", "Hy": "F"}, "56": {"K": "F", "Hy": "F"}, "57": {"Hy": "V", "Pt": "V", "Sc": "V", "Ma": "V"}, "58": {"F": "V", "Pd": "V"}, "59": {"F": "V"}, "60": {"D": "F", "Ma": "V"}, "61": {"F": "F", "K": "F"}, "62": {"Hs": "F", "Hy": "F"}, "63": {"Hs": "F", "Pa": "F", "Sc": "F"}, "64": {"F": "V", "Pa": "V", "Sc": "V"}, "65": {"K": "F", "D": "F", "Pd": "F"}, "66": {"Pa": "V", "Pt": "V", "Sc": "V"}, "67": {"K": "F", "Pa": "F"}, "68": {"Hs": "F", "Pa": "V", "Sc": "V"}, "69": {"K": "F"}, "70": {"K": "F"}, "71": {"F": "V"}};
 const CONV = {"L": {"0": 2, "1": 4, "2": 6, "3": 8, "4": 10, "5": 12}, "F": {"0": 2, "1": 4, "2": 6, "3": 9, "4": 11, "5": 14, "6": 16, "7": 18, "8": 21, "9": 23, "10": 25, "11": 28, "12": 30, "13": 33, "14": 35, "15": 37}, "K": {"0": 4, "1": 5, "2": 7, "3": 8, "4": 10, "5": 11, "6": 13, "7": 14, "8": 15, "9": 17, "10": 18, "11": 20, "12": 21, "13": 23, "14": 24, "15": 26, "16": 27}, "Hs": {"0": 2, "1": 4, "2": 6, "3": 8, "4": 10, "5": 12, "6": 14, "7": 16, "8": 18, "9": 20, "10": 22, "11": 23, "12": 25, "13": 27, "14": 29}, "D": {"0": 13, "1": 15, "2": 16, "3": 18, "4": 20, "5": 22, "6": 24, "7": 26, "8": 28, "9": 29, "10": 31, "11": 33, "12": 35, "13": 38, "14": 39, "15": 40, "16": 42, "17": 44, "18": 46, "19": 48, "20": 50}, "Hy": {"0": 10, "1": 11, "2": 13, "3": 15, "4": 16, "5": 18, "6": 19, "7": 21, "8": 22, "9": 24, "10": 25, "11": 27, "12": 29, "13": 30, "14": 32, "15": 33, "16": 35, "17": 36, "18": 38, "19": 40, "20": 41, "21": 43, "22": 44, "23": 46, "24": 47, "25": 49, "26": 50}, "Pd": {"0": 9, "1": 11, "2": 13, "3": 14, "4": 16, "5": 18, "6": 20, "7": 21, "8": 23, "9": 25, "10": 26, "11": 28, "12": 30, "13": 32, "14": 33, "15": 35, "16": 37, "17": 39, "18": 40, "19": 42}, "Pa": {"0": 5, "1": 7, "2": 8, "3": 10, "4": 12, "5": 14, "6": 15, "7": 17, "8": 19, "9": 21, "10": 22, "11": 24, "12": 26, "13": 28, "14": 29}, "Pt": {"0": 2, "1": 4, "2": 6, "3": 9, "4": 11, "5": 13, "6": 16, "7": 18, "8": 20, "9": 23, "10": 25, "11": 27, "12": 30, "13": 32, "14": 34, "15": 37, "16": 39}, "Sc": {"0": 2, "1": 4, "2": 7, "3": 10, "4": 13, "5": 15, "6": 18, "7": 21, "8": 24, "9": 26, "10": 29, "11": 32, "12": 35, "13": 37, "14": 40, "15": 43, "16": 46, "17": 48, "18": 51, "19": 54, "20": 57}, "Ma": {"0": 8, "1": 10, "2": 11, "3": 13, "4": 15, "5": 17, "6": 18, "7": 20, "8": 22, "9": 24, "10": 25, "11": 27, "12": 29}};
 const T_M = {"0":{"L":24,"K":24,"Hs":23,"Pa":25},"1":{"L":30,"F":22,"K":26,"Hs":25,"Pa":28},"2":{"L":36,"F":28,"K":28,"Hs":27,"Pa":31},"3":{"L":40,"F":33,"K":30,"Hs":29,"Hy":21,"Pa":33},"4":{"L":44,"F":37,"K":33,"Hs":31,"Hy":23,"Pa":36},"5":{"L":48,"F":39,"K":35,"Hs":33,"Hy":25,"Pa":39},"6":{"L":52,"F":42,"K":37,"Hs":35,"Hy":27,"Pa":42},"7":{"L":56,"F":44,"K":39,"Hs":38,"D":20,"Hy":29,"Pd":22,"Pa":44,"Ma":22},"8":{"L":60,"F":47,"K":42,"Hs":40,"D":22,"Hy":30,"Pd":24,"Pa":47,"Pt":20,"Sc":20,"Ma":24},"9":{"L":63,"F":49,"K":44,"Hs":42,"D":24,"Hy":32,"Pd":25,"Pa":50,"Pt":21,"Sc":22,"Ma":27},"10":{"L":67,"F":51,"K":46,"Hs":44,"D":27,"Hy":34,"Pd":29,"Pa":53,"Pt":23,"Sc":24,"Ma":29},"11":{"L":72,"F":53,"K":48,"Hs":46,"D":29,"Hy":36,"Pd":31,"Pa":55,"Pt":25,"Sc":25,"Ma":32},"12":{"L":76,"F":56,"K":51,"Hs":48,"D":31,"Hy":38,"Pd":33,"Pa":58,"Pt":27,"Sc":27,"Ma":34},"13":{"L":80,"F":59,"K":53,"Hs":50,"D":33,"Hy":40,"Pd":35,"Pa":61,"Pt":29,"Sc":29,"Ma":37},"14":{"L":84,"F":61,"K":55,"Hs":53,"D":35,"Hy":42,"Pd":37,"Pa":64,"Pt":30,"Sc":30,"Ma":39},"15":{"F":62,"K":58,"Hs":55,"D":37,"Hy":44,"Pd":39,"Pa":67,"Pt":32,"Sc":32,"Ma":42},"16":{"F":64,"K":60,"Hs":57,"D":40,"Hy":45,"Pd":42,"Pa":69,"Pt":34,"Sc":33,"Ma":44},"17":{"F":65,"K":62,"Hs":59,"D":42,"Hy":47,"Pd":44,"Pa":72,"Pt":35,"Sc":35,"Ma":47},"18":{"F":67,"K":64,"Hs":61,"D":44,"Hy":49,"Pd":45,"Pa":75,"Pt":37,"Sc":37,"Ma":49},"19":{"F":71,"K":67,"Hs":63,"D":46,"Hy":51,"Pd":49,"Pa":78,"Pt":39,"Sc":38,"Ma":52},"20":{"F":73,"K":69,"Hs":65,"D":48,"Hy":53,"Pd":51,"Pa":81,"Pt":41,"Sc":40,"Ma":54},"21":{"F":76,"K":71,"Hs":687,"D":50,"Hy":55,"Pd":53,"Pa":83,"Pt":42,"Sc":42,"Ma":57},"22":{"F":78,"K":73,"Hs":70,"D":53,"Hy":57,"Pd":55,"Pa":86,"Pt":44,"Sc":43,"Ma":59},"23":{"K":76,"Hs":72,"D":55,"Hy":59,"Pd":57,"Pa":89,"Pt":46,"Sc":45,"Ma":62},"24":{"K":78,"Hs":74,"D":57,"Hy":61,"Pd":59,"Pa":92,"Pt":48,"Sc":47,"Ma":64},"25":{"K":80,"Hs":76,"D":59,"Hy":62,"Pd":62,"Pa":94,"Pt":49,"Sc":48,"Ma":67},"26":{"K":82,"Hs":78,"D":61,"Hy":64,"Pd":64,"Pa":97,"Pt":51,"Sc":50,"Ma":69},"27":{"K":85,"Hs":80,"D":63,"Hy":65,"Pd":65,"Pa":100,"Pt":53,"Sc":51,"Ma":72},"28":{"K":87,"Hs":83,"D":65,"Hy":69,"Pd":68,"Pa":103,"Pt":55,"Sc":53,"Ma":74},"29":{"K":89,"Hs":85,"D":68,"Hy":70,"Pd":71,"Pa":106,"Pt":56,"Sc":55,"Ma":77},"30":{"K":91,"Hs":87,"D":70,"Hy":72,"Pd":73,"Pa":108,"Pt":58,"Sc":56,"Ma":79},"31":{"Hs":89,"D":72,"Hy":74,"Pd":75,"Pa":111,"Pt":60,"Sc":58,"Ma":82},"32":{"Hs":91,"D":74,"Hy":76,"Pd":77,"Pa":114,"Pt":62,"Sc":60,"Ma":84},"33":{"Hs":93,"D":76,"Hy":78,"Pd":79,"Pa":117,"Pt":63,"Sc":61,"Ma":87},"34":{"Hs":95,"D":78,"Hy":70,"Pd":82,"Pa":119,"Pt":65,"Sc":63,"Ma":89},"35":{"Hs":98,"D":81,"Hy":81,"Pd":84,"Pt":67,"Sc":64,"Ma":92},"36":{"Hs":100,"D":83,"Hy":83,"Pd":86,"Pt":69,"Sc":66,"Ma":94},"37":{"Hs":102,"D":85,"Hy":85,"Pd":88,"Pt":70,"Sc":68,"Ma":97},"38":{"Hs":104,"D":87,"Hy":84,"Pd":90,"Pt":72,"Sc":69,"Ma":99},"39":{"Hs":106,"D":89,"Hy":89,"Pd":93,"Pt":74,"Sc":71,"Ma":102},"40":{"Hs":108,"D":91,"Hy":91,"Pd":95,"Pt":76,"Sc":73,"Ma":104},"41":{"Hs":110,"D":93,"Hy":93,"Pd":97,"Pt":77,"Sc":74,"Ma":107},"42":{"Hs":113,"D":96,"Hy":95,"Pd":99,"Pt":79,"Sc":76,"Ma":110},"43":{"Hs":115,"D":98,"Hy":96,"Pd":102,"Pt":81,"Sc":77,"Ma":112},"44":{"Hs":117,"D":100,"Hy":98,"Pd":104,"Pt":83,"Sc":79,"Ma":115},"45":{"Hs":119,"D":102,"Hy":100,"Pd":106,"Pt":84,"Sc":81,"Ma":117},"46":{"D":104,"Hy":102,"Pd":109,"Pt":86,"Sc":82,"Ma":120},"47":{"D":106,"Hy":104,"Pd":110,"Pt":88,"Sc":84},"48":{"D":109,"Hy":106,"Pd":113,"Pt":90,"Sc":86},"49":{"D":111,"Hy":108,"Pd":115,"Pt":91,"Sc":87},"50":{"D":113,"Hy":110,"Pd":117,"Pt":93,"Sc":89},"51":{"D":115,"Hy":112,"Pd":119,"Pt":95,"Sc":90},"52":{"D":117,"Hy":113,"Pt":97,"Sc":92},"53":{"D":119,"Hy":115,"Pt":98,"Sc":94},"54":{"Hy":117,"Pt":100,"Sc":95},"55":{"Hy":119,"Pt":102,"Sc":97},"56":{"Pt":104,"Sc":99},"57":{"Pt":105,"Sc":100},"58":{"Pt":107,"Sc":102},"59":{"Pt":109,"Sc":104},"60":{"Pt":111,"Sc":105},"61":{"Pt":112,"Sc":107},"62":{"Pt":114,"Sc":108},"63":{"Pt":116,"Sc":110},"64":{"Pt":118,"Sc":112},"65":{"Pt":119,"Sc":113},"66":{"Sc":115},"67":{"Sc":117},"68":{"Sc":118},"69":{"Sc":120}};
@@ -1143,6 +1240,9 @@ document.getElementById('frm').addEventListener('submit', function(e){
     enviarParaSheets(true, asUrl);
   }
 
+  // Análise de itens por escala elevada
+  buildItemsAnalysis(resp, tScores);
+
   // Cliente vê só o obrigado — resultados ficam na secção do clínico
   document.getElementById('frm').style.display='none';
   const pbar = document.getElementById('pgbar');
@@ -1184,6 +1284,87 @@ function enviarParaSheets(auto, url){
       if(status){ status.textContent='✅ Enviado! Confirmar no Google Sheets.'; status.className='sheets-status ok'; }
       fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(window._mmData)}).catch(()=>{});
     });
+}
+
+function buildItemsAnalysis(resp, tScores) {
+  const allScales = [...VALIDITY_SCALES,...CLINICAL_SCALES];
+  const scaleNamesShort = {
+    L:'Escala L — Mentira', F:'Escala F — Infrequência', K:'Escala K — Correcção',
+    Hs:'1 — Hipocondria (Hs)', D:'2 — Depressão (D)', Hy:'3 — Histeria (Hy)',
+    Pd:'4 — Desvio Psicopático (Pd)', Pa:'6 — Paranóia (Pa)',
+    Pt:'7 — Psicastenia (Pt)', Sc:'8 — Esquizofrenia (Sc)', Ma:'9 — Hipomania (Ma)'
+  };
+
+  const elevated = allScales.filter(s => (tScores[s]||0) >= 65);
+  if (!elevated.length) {
+    document.getElementById('itemsAnalysis').style.display = 'none';
+    return;
+  }
+
+  const container = document.getElementById('itemsContent');
+  container.innerHTML = '';
+
+  elevated.forEach(scale => {
+    const T = tScores[scale] || 0;
+    const isHigh = T >= 70;
+    const block = document.createElement('div');
+    block.className = 'scale-block';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'scale-block-title ' + (isHigh ? 'elevated' : 'moderate');
+    titleEl.textContent = (scaleNamesShort[scale]||scale) + '   T = ' + T + '  ' + (isHigh ? '⚠ ELEVADO' : '↑ Moderado');
+    block.appendChild(titleEl);
+
+    if (scale === 'K') {
+      const nota = document.createElement('div');
+      nota.className = 'scale-nota-k';
+      nota.textContent = 'Nota K: Itens cotados = cliente respondeu de forma defensiva (negou o item). Uma K elevada sugere minimização de dificuldades. Reveja os itens não cotados onde o cliente admitiu alguma vulnerabilidade.';
+      block.appendChild(nota);
+    }
+
+    // Recolher itens desta escala
+    const scaleItems = [];
+    for (const [itemStr, scales] of Object.entries(SCORING_KEY)) {
+      if (scales[scale] !== undefined) {
+        const n = parseInt(itemStr);
+        const keyedDir = scales[scale];
+        const clientResp = resp[n] || null;
+        const scored = clientResp !== null && clientResp === keyedDir;
+        scaleItems.push({ n, keyedDir, clientResp, scored });
+      }
+    }
+    scaleItems.sort((a,b) => a.n - b.n);
+
+    const scoredCount = scaleItems.filter(i => i.scored).length;
+
+    // Tabela
+    const table = document.createElement('table');
+    table.className = 'items-table';
+    table.innerHTML = '<thead><tr><th>N.º</th><th>Questão</th><th>Resposta</th><th>Cotação</th><th>Contribuiu?</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+
+    scaleItems.forEach(item => {
+      const tr = document.createElement('tr');
+      if (item.scored) tr.className = 'scored';
+      const respText = item.clientResp === 'V' ? 'Verdadeiro' : item.clientResp === 'F' ? 'Falso' : '—';
+      const keyedText = item.keyedDir === 'V' ? 'Verdadeiro' : 'Falso';
+      const contribText = item.scored ? '✓ Sim' : '✗ Não';
+      tr.innerHTML = `<td class="num">${item.n}</td><td class="qtxt">${QUESTIONS[item.n]||''}</td><td>${respText}</td><td>${keyedText}</td><td class="contrib">${contribText}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    block.appendChild(table);
+
+    const summary = document.createElement('p');
+    summary.className = 'items-summary';
+    summary.textContent = '→ ' + scoredCount + ' de ' + scaleItems.length + ' itens respondidos na direcção de cotação.';
+    block.appendChild(summary);
+
+    container.appendChild(block);
+  });
+
+  document.getElementById('itemsAnalysis').style.display = 'block';
 }
 
 function mostrarResultados(){
