@@ -1210,20 +1210,7 @@ document.getElementById('frm').addEventListener('submit', function(e){
   document.getElementById('resNote').innerHTML=
     '<strong>Nota:</strong> Nota T ≥ 65 indica elevação clinicamente significativa. '+'Nota T ≥ 70 indica elevação marcada.';
 
-  // Send to Apps Script if configured
-  if(APPS_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxoOxBo2KwRMnTFcGCjynsXJTJhoX8DHks4jXaVFOxGpi0Jy58weRBEXUBwWbVMxI8p/exec'){
-    const payload = {instrumento:'Mini-Mult',nome,data_nasc:dataNasc,idade:age,sexo:gender,
-      escolaridade:esc,profissao:document.getElementById('profissao').value,
-      data_avaliacao:dataAv,psicologo:document.getElementById('psico').value,
-      ...Object.fromEntries(Object.entries(rawMM).map(([k,v])=>[`raw_mm_${k}`,v])),
-      ...Object.fromEntries(Object.entries(tScores).map(([k,v])=>[`T_${k}`,v||''])),
-      ...Object.fromEntries(Object.entries(resp).map(([k,v])=>[`q${k}`,v]))
-    };
-    fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}})
-      .catch(()=>{});
-  }
-
-  // Guardar dados para o clínico
+  // Guardar dados para o clínico (inclui respostas individuais q1-q71)
   window._mmData = {
     instrumento:'Mini-Mult', nome, data_nasc:dataNasc, idade:age,
     sexo:gender, escolaridade:esc,
@@ -1234,9 +1221,9 @@ document.getElementById('frm').addEventListener('submit', function(e){
     ...Object.fromEntries(Object.entries(resp).map(([k,v])=>[`q${k}`,v]))
   };
 
-  // Envio automático para Apps Script em background
+  // Envio automático para Apps Script (sempre, com o URL configurado ou o URL padrão)
   const asUrl = localStorage.getItem('mm_appsScriptUrl') || APPS_SCRIPT_URL;
-  if(asUrl && asUrl !== 'https://script.google.com/macros/s/AKfycbxoOxBo2KwRMnTFcGCjynsXJTJhoX8DHks4jXaVFOxGpi0Jy58weRBEXUBwWbVMxI8p/exec'){
+  if(asUrl && asUrl.startsWith('https://script.google.com/macros/s/')){
     enviarParaSheets(true, asUrl);
   }
 
