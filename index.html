@@ -11,9 +11,10 @@
   .logo { display:flex; align-items:center; gap:10px; margin-bottom:32px; }
   .logo-mark { width:36px; height:36px; background:#2a3494; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:16px; }
   h1 { font-size:1.4rem; color:#1a1f5e; margin-bottom:8px; }
-  p { color:#64748b; margin-bottom:28px; font-size:0.95rem; }
+  .subtitle { color:#64748b; margin-bottom:28px; font-size:0.95rem; }
   .instrument { display:block; border:2px solid #e8ecf5; border-radius:14px; padding:18px 22px; margin-bottom:14px; text-decoration:none; color:#1a1f5e; transition:all .2s; }
   .instrument:hover { border-color:#2a3494; background:#f5f7ff; }
+  .instrument:last-of-type { margin-bottom:0; }
   .instrument h2 { font-size:1rem; margin-bottom:4px; }
   .instrument span { font-size:0.85rem; color:#64748b; }
   .badge { display:inline-block; font-size:0.75rem; padding:2px 8px; border-radius:20px; margin-top:6px; }
@@ -28,32 +29,38 @@
     <strong style="color:#1a1f5e;font-size:1.1rem;">HICOA</strong>
   </div>
   <h1>Instrumentos de Avaliação Psicológica</h1>
-  <p>Seleccione o instrumento de avaliação pretendido.</p>
+  <p class="subtitle">Seleccione o instrumento de avaliação pretendido.</p>
+
   <a class="instrument" href="k10/">
     <h2>Escala de Kessler — K10</h2>
     <span>10 perguntas · Saúde mental geral · 2 minutos</span>
     <div class="badge ok">Disponível</div>
   </a>
+
+  <a class="instrument" href="ysq/">
+    <h2>YSQ-S3 — Questionário de Esquemas de Young</h2>
+    <span>90 perguntas · Esquemas cognitivos · 10–15 minutos</span>
+    <div class="badge ok">Disponível</div>
+  </a>
+
   <a class="instrument" href="bsi/">
     <h2>Brief Symptom Inventory — BSI-18</h2>
     <span>18 perguntas · Sintomas psicológicos</span>
     <div class="badge ok">Disponível</div>
   </a>
-  <a class="instrument" href="16pf5/">
-    <h2>16PF-5 — Questionário de Personalidade</h2>
-    <span>185 perguntas · 16 Factores de Personalidade · R.B. Cattell</span>
-    <div class="badge ok">Disponível</div>
-  </a>
+
   <a class="instrument" href="minimult/">
     <h2>Mini-Mult — Inventário de Personalidade</h2>
     <span>71 perguntas · Versão abreviada do MMPI · 3 escalas de validade + 8 clínicas</span>
     <div class="badge ok">Disponível</div>
   </a>
-      <a class="instrument" href="ysq/">
-        <div class="inst-icon">🧠</div>
-        <div class="inst-name">YSQ-S3</div>
-        <div class="inst-desc">Questionário de Esquemas de Young</div>
-      </a>
+
+  <a class="instrument" href="16pf5/">
+    <h2>16PF-5 — Questionário de Personalidade</h2>
+    <span>185 perguntas · 16 Factores de Personalidade · R.B. Cattell</span>
+    <div class="badge ok">Disponível</div>
+  </a>
+
   <footer>HICOA — Consultório de Psicologia · Dr. Raul Pereira</footer>
 </div>
 </body>
