@@ -402,6 +402,146 @@
     .texto-pergunta { font-size: 17px; }
     .dimensoes { grid-template-columns: 1fr; }
   }
+
+  /* ── Painel Clínico ─────────────────────────────────── */
+  .painel-clinico {
+    display: none;
+    margin-top: 32px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .painel-clinico-inner {
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px 36px;
+    box-shadow: 0 4px 32px rgba(26,42,90,.13);
+    border-top: 5px solid #1a2a5a;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .pc-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e8ecf5;
+  }
+  .pc-header h2 { font-size: 18px; color: #1a2a5a; margin: 0; }
+  .pc-header span { font-size: 12px; color: #64748b; margin-left: auto; }
+  .pc-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a2a5a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 24px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .pc-score-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0f2f8;
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+  }
+  .pc-score-num {
+    font-size: 36px;
+    font-weight: 800;
+    color: #1a2a5a;
+    line-height: 1;
+  }
+  .pc-score-label { font-size: 13px; color: #475569; }
+  .pc-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+  .pc-badge.verde   { background: #dcfce7; color: #15803d; }
+  .pc-badge.amarelo { background: #fef3c7; color: #92400e; }
+  .pc-badge.vermelho { background: #fee2e2; color: #991b1b; }
+  .pc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .pc-table th {
+    background: #1a2a5a;
+    color: white;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .pc-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+  }
+  .pc-table tr:nth-child(even) td { background: #f8fafc; }
+  .pc-table td.val-alto { color: #991b1b; font-weight: 700; background: #fee2e2 !important; }
+  .pc-table td.val-medio { color: #92400e; font-weight: 600; background: #fef3c7 !important; }
+  .pc-interpretacao {
+    background: #f0f4ff;
+    border-left: 4px solid #1a2a5a;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+  .pc-as-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+  .pc-as-section label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pc-as-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    margin-bottom: 10px;
+    font-family: inherit;
+  }
+  .pc-as-input:focus { border-color: #4a5bc4; }
+  .pc-btn-enviar {
+    background: linear-gradient(135deg, #1a2a5a, #2a3494);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .pc-btn-enviar:hover { opacity: 0.9; }
+  .pc-status {
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+  .pc-status.ok { color: #16a34a; }
+  .pc-status.erro { color: #dc2626; }
 </style>
 </head>
 <body>
@@ -496,6 +636,26 @@
   </div>
 
 </div><!-- /card -->
+
+<!-- ══ PAINEL CLÍNICO (oculto) ══════════════════════════════════════ -->
+<div class="painel-clinico" id="painelClinico">
+  <div class="painel-clinico-inner">
+    <div class="pc-header">
+      <span style="font-size:22px">🩺</span>
+      <h2>Painel Clínico — K10</h2>
+      <span id="pc-data-hora"></span>
+    </div>
+    <div id="pc-corpo"></div>
+    <div class="pc-as-section">
+      <label>Apps Script URL</label>
+      <input class="pc-as-input" id="pc-as-url" type="url"
+             placeholder="https://script.google.com/macros/s/…/exec">
+      <button class="pc-btn-enviar" onclick="enviarK10()">Enviar para Sheets + Relatório</button>
+      <div class="pc-status" id="pc-status"></div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 // ── Perguntas K10 ──────────────────────────────────────────────────────────
@@ -624,18 +784,15 @@ function verResultado() {
   const email = document.getElementById("campo-email").value.trim();
   const score = respostas.reduce((s, v) => s + (v || 0), 0);
 
-  // Enviar para Google Sheets (se URL configurado)
-  if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "COLE_AQUI_O_URL_DO_APPS_SCRIPT") {
+  // Auto-enviar para Apps Script
+  if (APPS_SCRIPT_URL && APPS_SCRIPT_URL.startsWith('https://script.google.com/macros/s/')) {
     const payload = {
       nome, email, score,
-      data: new Date().toLocaleString("pt-PT"),
-      respostas: respostas.join(",")
+      data: new Date().toLocaleDateString('pt-PT'),
+      respostas: respostas.join(','),
+      ...Object.fromEntries(respostas.map((v,i) => ['q'+(i+1), v]))
     };
-    fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }).catch(() => {});
+    fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(()=>{});
   }
 
   // Classificação
@@ -701,4 +858,135 @@ O que está a sentir é real e tem solução. A psicologia tem ferramentas efica
   } else {
     ctaWrap.innerHTML = `
       <a class="btn-cta-sec" href="https://hicoa.pt" target="_blank">
-        Conhecer o HICO
+        Conhecer o HICOA
+      </a>
+    `;
+  }
+
+  mostrar("ecrã-resultado");
+  buildPainelClinico(score, [...respostas], nome, email);
+}
+
+// ── Painel Clínico ─────────────────────────────────────────────────────────
+const LABELS_K10 = ['','Nunca','Poucas vezes','Às vezes','Muitas vezes','Sempre'];
+const LABELS_NIVEL = { verde:'Sem indicadores clínicos relevantes', amarelo:'Sofrimento moderado — acompanhar', vermelho:'Sofrimento elevado — intervenção recomendada' };
+
+function buildPainelClinico(score, resps, nome, email) {
+  const agora = new Date();
+  document.getElementById('pc-data-hora').textContent =
+    agora.toLocaleDateString('pt-PT') + ' ' + agora.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+
+  let nivel, classe;
+  if (score <= 19) { nivel = 'Baixo'; classe = 'verde'; }
+  else if (score <= 29) { nivel = 'Moderado'; classe = 'amarelo'; }
+  else { nivel = 'Elevado'; classe = 'vermelho'; }
+
+  // Dimensões
+  const dims = [
+    { nome:'Exaustão',         pergs:[0,7],    cor:'#818cf8' },
+    { nome:'Ansiedade',        pergs:[1,2,4,5],cor:'#fb923c' },
+    { nome:'Humor deprimido',  pergs:[3,6,8,9],cor:'#f472b6' },
+  ];
+
+  let html = '';
+
+  // Score box
+  html += `<div class="pc-score-box">
+    <div class="pc-score-num">${score}</div>
+    <div class="pc-score-label">K10 Total<br><span style="font-size:11px;color:#94a3b8">10–50 pontos</span></div>
+    <span class="pc-badge ${classe}">${nivel}</span>
+  </div>`;
+  if (nome || email) html += `<div style="font-size:13px;color:#475569;margin-bottom:8px"><b>Nome:</b> ${nome||'—'} &nbsp;|&nbsp; <b>Email:</b> ${email||'—'}</div>`;
+
+  // Tabela dimensões
+  html += `<div class="pc-section-title">Dimensões</div>
+  <table class="pc-table">
+    <tr><th>Dimensão</th><th>Itens</th><th>Pontos</th><th>Máx</th><th>%</th></tr>`;
+  dims.forEach(d => {
+    const pts = d.pergs.reduce((s,i) => s + (resps[i]||0), 0);
+    const max = d.pergs.length * 5;
+    const pct = Math.round(pts/max*100);
+    const cl  = pct >= 70 ? 'val-alto' : pct >= 50 ? 'val-medio' : '';
+    html += `<tr><td>${d.nome}</td><td>${d.pergs.map(i=>i+1).join(', ')}</td>
+      <td class="${cl}">${pts}</td><td>${max}</td><td class="${cl}">${pct}%</td></tr>`;
+  });
+  html += '</table>';
+
+  // Tabela itens
+  html += `<div class="pc-section-title">Respostas por item</div>
+  <table class="pc-table">
+    <tr><th>#</th><th>Item</th><th>Resposta</th><th>Valor</th></tr>`;
+  PERGUNTAS.forEach((p,i) => {
+    const v = resps[i] || 0;
+    const cl = v >= 4 ? 'val-alto' : v >= 3 ? 'val-medio' : '';
+    html += `<tr><td>${i+1}</td><td style="font-size:12px">${p}</td>
+      <td class="${cl}">${LABELS_K10[v]||'—'}</td>
+      <td class="${cl}">${v}</td></tr>`;
+  });
+  html += '</table>';
+
+  // Interpretação clínica
+  let interp = '';
+  if (score <= 19) {
+    interp = `K10 = ${score} (10–19): Sem indicadores clínicos de sofrimento psicológico significativo. Sem necessidade de intervenção imediata. Manter follow-up de rotina se aplicável.`;
+  } else if (score <= 24) {
+    interp = `K10 = ${score} (20–24): Sofrimento psicológico ligeiro a moderado. Acompanhar evolução. Considerar intervenção breve ou psicoeducação. Avaliar factores de stresse actuais.`;
+  } else if (score <= 29) {
+    interp = `K10 = ${score} (25–29): Sofrimento psicológico moderado. Intervenção psicoterapêutica recomendada. Avaliar critérios diagnósticos de perturbações ansiosas ou depressivas.`;
+  } else {
+    interp = `K10 = ${score} (30–50): Sofrimento psicológico elevado. Intervenção clínica prioritária. Avaliar risco e necessidade de encaminhamento. Iniciar plano terapêutico estruturado.`;
+  }
+
+  const itensAltos = resps.filter(v => v >= 4).length;
+  if (itensAltos > 0) {
+    interp += `\n\nNota: ${itensAltos} item(s) com pontuação ≥ 4 (Muitas vezes / Sempre) — verificar itens destacados na tabela acima.`;
+  }
+
+  html += `<div class="pc-section-title">Interpretação clínica</div>
+  <div class="pc-interpretacao">${interp}</div>`;
+
+  document.getElementById('pc-corpo').innerHTML = html;
+
+  // Pré-preencher URL guardado
+  const saved = localStorage.getItem('k10_as_url') || APPS_SCRIPT_URL;
+  const urlInput = document.getElementById('pc-as-url');
+  if (saved) urlInput.value = saved;
+  urlInput.addEventListener('input', () => localStorage.setItem('k10_as_url', urlInput.value));
+
+  document.getElementById('painelClinico').style.display = 'block';
+  document.getElementById('painelClinico').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function enviarK10() {
+  const url = document.getElementById('pc-as-url').value.trim() || APPS_SCRIPT_URL;
+  const status = document.getElementById('pc-status');
+  if (!url || !url.startsWith('https://script.google.com/macros/s/')) {
+    status.textContent = '⚠️ URL inválido.'; status.className = 'pc-status erro'; return;
+  }
+  status.textContent = '⏳ A enviar…'; status.className = 'pc-status';
+  const nome  = document.getElementById('campo-nome').value.trim();
+  const email = document.getElementById('campo-email').value.trim();
+  const score = respostas.reduce((s,v) => s + (v||0), 0);
+  const payload = {
+    nome, email, score,
+    data: new Date().toLocaleDateString('pt-PT'),
+    respostas: respostas.join(','),
+    ...Object.fromEntries(respostas.map((v,i) => ['q'+(i+1), v]))
+  };
+  fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(d => {
+      if (d.docUrl) {
+        status.innerHTML = `✅ Enviado. <a href="${d.docUrl}" target="_blank" style="color:#1a2a5a;font-weight:700">Ver relatório →</a>`;
+      } else {
+        status.textContent = '✅ Enviado com sucesso.';
+      }
+      status.className = 'pc-status ok';
+    })
+    .catch(() => { status.textContent = '❌ Erro no envio.'; status.className = 'pc-status erro'; });
+}
+
+</script>
+
+</body>
+</html>
