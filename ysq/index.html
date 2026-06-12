@@ -1586,15 +1586,11 @@ function enviarParaSheets(auto,url){
   if(!window._ysqData){if(status&&!auto){status.textContent='⚠️ Calcular primeiro.';status.className='sheets-status error';status.style.display='block';}return;}
   if(status){status.textContent=auto?'⏳ A guardar automaticamente...':'⏳ A enviar...';status.className='sheets-status loading';status.style.display='block';}
   localStorage.setItem('ysq_asUrl',u);
-  fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(window._ysqData)})
-    .then(r=>r.json()).then(resp=>{
-      if(resp.status==='ok'){
-        if(status){status.textContent='✅ Dados guardados!';status.className='sheets-status ok';}
-        if(resp.docUrl){document.getElementById('docLinkBtn').href=resp.docUrl;document.getElementById('docLinkBox').style.display='block';}
-      }else throw new Error();
+  fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(window._ysqData)})
+    .then(()=>{
+      if(status){status.textContent='✅ Enviado. Relatório criado no Google Drive.';status.className='sheets-status ok';}
     }).catch(()=>{
-      if(status){status.textContent='✅ Enviado! Confirmar no Google Sheets.';status.className='sheets-status ok';}
-      fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(window._ysqData)}).catch(()=>{});
+      if(status){status.textContent='❌ Erro no envio.';status.className='sheets-status error';}
     });
 }
 function mostrarResultados(){document.getElementById('clinicPanel').style.display='block';window.scrollTo({top:document.getElementById('clinicPanel').offsetTop-20,behavior:'smooth'});}
