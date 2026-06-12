@@ -792,7 +792,7 @@ function verResultado() {
       respostas: respostas.join(','),
       ...Object.fromEntries(respostas.map((v,i) => ['q'+(i+1), v]))
     };
-    fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(()=>{});
+    fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) }).catch(()=>{});
   }
 
   // Classificação
@@ -973,14 +973,9 @@ function enviarK10() {
     respostas: respostas.join(','),
     ...Object.fromEntries(respostas.map((v,i) => ['q'+(i+1), v]))
   };
-  fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
-    .then(r => r.json())
-    .then(d => {
-      if (d.docUrl) {
-        status.innerHTML = `✅ Enviado. <a href="${d.docUrl}" target="_blank" style="color:#1a2a5a;font-weight:700">Ver relatório →</a>`;
-      } else {
-        status.textContent = '✅ Enviado com sucesso.';
-      }
+  fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) })
+    .then(() => {
+      status.textContent = '✅ Enviado. Relatório criado no Google Drive.';
       status.className = 'pc-status ok';
     })
     .catch(() => { status.textContent = '❌ Erro no envio.'; status.className = 'pc-status erro'; });
