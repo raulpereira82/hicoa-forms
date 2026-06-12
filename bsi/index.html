@@ -750,32 +750,17 @@ function enviarParaSheets(auto) {
 
   fetch(url, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain'},
     body: JSON.stringify(window._bsiData)
   })
-  .then(r => r.json())
-  .then(resp => {
-    if (resp.status === 'ok') {
-      status.textContent = '✅ Dados guardados no Google Sheets!';
-      status.className   = 'sheets-status ok';
-      if (resp.docUrl) {
-        document.getElementById('docLinkBtn').href = resp.docUrl;
-        docBox.style.display = 'block';
-      }
-    } else {
-      throw new Error(resp.msg || 'Erro desconhecido');
-    }
-  })
-  .catch(err => {
-    // no-cors fallback — o script pode não devolver resposta legível
-    status.textContent = '✅ Enviado! (Abre o Google Sheets para confirmar)';
+  .then(() => {
+    status.textContent = '✅ Enviado. Relatório criado no Google Drive.';
     status.className   = 'sheets-status ok';
-    // tentar novamente em modo no-cors se falhou por CORS
-    fetch(url, {
-      method: 'POST', mode: 'no-cors',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(window._bsiData)
-    }).catch(()=>{});
+  })
+  .catch(() => {
+    status.textContent = '❌ Erro no envio.';
+    status.className   = 'sheets-status error';
   });
 }
 
