@@ -4510,7 +4510,7 @@
 <script>
 // Factor B correct answers
 const FACTOR_B_ANSWERS = {"171": "A", "172": "C", "173": "A", "174": "A", "175": "C", "176": "C", "177": "B", "178": "A", "179": "C", "180": "B", "181": "B", "182": "B", "183": "C", "184": "B", "185": "B"};
-const APPS_SCRIPT_URL = "PLACEHOLDER_APPS_SCRIPT_URL";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa6ptCFT_CL2neUVjOXAIN0u8a-ZOzEiJT7h9P3HJxAsXdLYomeriZacKL3pFnpQozdw/exec";
 const TOTAL_ITEMS = 185;
 // Progress tracking
 function updateProgress() {
@@ -4602,16 +4602,16 @@ document.getElementById('form16pf').addEventListener('submit', async function(e)
  btn.innerHTML = '<span class="spinner"></span>A enviar...';
  try {
  let submitOk = false;
- if (APPS_SCRIPT_URL !== 'PLACEHOLDER_APPS_SCRIPT_URL') {
- const resp = await fetch(APPS_SCRIPT_URL, {
+ try {
+ await fetch(APPS_SCRIPT_URL, {
  method: 'POST',
- body: JSON.stringify(payload),
- headers: { 'Content-Type': 'text/plain' }
+ mode: 'no-cors',
+ headers: { 'Content-Type': 'text/plain' },
+ body: JSON.stringify(payload)
  });
- const result = await resp.json();
- submitOk = result.status === 'ok';
- } else {
- // No Apps Script yet — show results locally
+ submitOk = true; // no-cors: resposta opaca, tratar como sucesso
+ } catch(fetchErr) {
+ // falhou rede — ainda mostramos resultados
  submitOk = true;
  }
  if (submitOk || true) {
